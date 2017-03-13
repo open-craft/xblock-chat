@@ -1,0 +1,703 @@
+/* Javascript for ChatXBlock. */
+
+function ChatTemplates(init_data) {
+    "use strict";
+
+    // A spacer div at the bottom of the screen is required on the iOS app to account for the prev/next toolbar.
+    var SPACER_HEIGHT = 44;
+
+    var h = virtualDom.h;
+
+    var renderCollection = function(template, collection, ctx) {
+        return collection.map(function(item) {
+            return template(item, ctx);
+        });
+    };
+
+    var imageTemplate = function(step) {
+        var attributes = {
+            'src': step.image_url,
+            'alt': step.image_alt || ''
+        };
+        return (
+            h('img', attributes)
+        );
+    };
+
+    // Position the image to make it cover the max possible area of the window while
+    // maintaining the aspect-ratio and keeping the entire image visible.
+    // If image is landscape, but window orientation is vertical (or the other way around),
+    // rotate the image 90 degrees.
+    var optimalOverlayImageStyle = function(img_width, img_height, win_width, win_height) {
+        var style = {
+            'position': 'fixed',
+            'max-width': 'none',
+            'max-height': 'none'
+        };
+
+        var scale = Math.min(win_width/img_width, win_height/img_height);
+
+        // Fitting a landscape image into a portrait-shaped window, or the other way around;
+        // we have to rotate the image and recalculate the scale with swapped width & height.
+        if ((img_width < img_height) !== (win_width < win_height)) {
+            scale = Math.min(win_height/img_width, win_width/img_height);
+            style['transform'] = 'rotate(90deg)';
+        }
+
+        var width = Math.floor(img_width * scale);
+        var height = Math.floor(img_height * scale);
+
+        style['width'] = width + 'px';
+        style['height'] = height + 'px';
+        style['top'] = Math.round((win_height - height) / 2) + 'px';
+        style['left'] = Math.round((win_width - width) / 2) + 'px';
+
+        return style;
+    };
+
+    var imageOverlayTemplate = function(ctx) {
+        var src = ctx.image_overlay.image_url;
+        var alt = ctx.image_overlay.image_alt;
+        var img_dims = ctx.image_dimensions[src];
+        var img_style = {};
+        if (img_dims) {
+            var win_width = $(window).width();
+            var win_height = $(window).height() - SPACER_HEIGHT;
+            img_style = optimalOverlayImageStyle(img_dims.width, img_dims.height, win_width, win_height);
+        }
+        return (
+            h('div.image-overlay', [
+                h('img', {src: src, alt: alt, style: img_style})
+            ])
+        );
+    };
+
+    var avatarTemplate = function(image_url) {
+        var image_attributes = {
+            'src': image_url
+        };
+        if (init_data["avatar_border_color"]) {
+            image_attributes["style"] = {
+                "border-color": init_data["avatar_border_color"]
+            };
+        }
+        return (
+            h('div.avatar', [
+                h('img', image_attributes)
+            ])
+        );
+    };
+
+    var botMessageContentTemplate = function(tag, children) {
+        return (
+            h(tag, [
+                avatarTemplate(init_data['bot_image_url']),
+                h('div.message-body', [
+                    h('p', children)
+                ])
+            ])
+        );
+    };
+
+    var botMessageTemplate = function(message, extra_css_class) {
+        var tag = 'div.message.bot';
+        var children = [message.message];
+        var step = init_data["steps"][message.step];
+        if (step && step.image_url) {
+            children = [imageTemplate(step), message.message];
+        }
+        if (extra_css_class) {
+            tag = tag.concat('.' + extra_css_class);
+        }
+        return botMessageContentTemplate(tag, children);
+    };
+
+    var spinnerTemplate = function() {
+        var tag = 'div.message.bot.spinner-message';
+        var spinner = [
+            h('div.spinner', [
+                h('div.bounce1'),
+                h('div.bounce2'),
+                h('div.bounce3')
+            ])
+        ];
+        return botMessageContentTemplate(tag, spinner);
+    };
+
+    var userMessageTemplate = function(message, extra_css_class) {
+        var tag = 'div.message.user';
+        if (extra_css_class) {
+            tag = tag.concat('.' + extra_css_class);
+        }
+        return (
+            h(tag, [
+                h('div.message-body', [
+                    h('p', message.message)
+                ]),
+                avatarTemplate(init_data['user_image_url'])
+            ])
+        );
+    };
+
+    var messagesTemplate = function(ctx) {
+        var templates = {};
+        templates[init_data["bot_id"]] = botMessageTemplate;
+        templates[init_data["user_id"]] = userMessageTemplate;
+        var messages = [];
+        ctx.messages.forEach(function(message) {
+            if (message.from in templates) {
+                messages.push(templates[message.from](message));
+            }
+        });
+        if (ctx.show_spinner) {
+            messages.push(spinnerTemplate());
+        } else if (ctx.new_bot_message) {
+            messages.push(botMessageTemplate(ctx.new_bot_message, 'fadein-message'));
+        } else if (ctx.new_user_message) {
+            messages.push(userMessageTemplate(ctx.new_user_message, 'fadein-message'));
+        }
+        return (
+            h(
+                'div.messages',
+                messages
+            )
+        );
+    };
+
+    var buttonTemplate = function(item, ctx) {
+        var attributes = {
+            'data-message': JSON.stringify(item.message),
+            'data-step_id': JSON.stringify(item.step)
+        };
+        return (
+            h(
+                'div.response-button',
+                {
+                    attributes: attributes
+                },
+                [
+                    h(
+                        'button',
+                        item.message
+                    )
+                ]
+            )
+        );
+    };
+
+    var buttonsTemplate = function(ctx, extra_css_class, transition_duration) {
+        var tag = 'div.buttons';
+        if (extra_css_class) {
+            tag = tag.concat('.' + extra_css_class);
+        }
+        var attributes = {};
+        if (transition_duration) {
+            attributes = {
+                style: {
+                    transition: 'max-height '+ transition_duration + 'ms linear'
+                }
+            };
+        }
+        var step = ctx.current_step && init_data["steps"][ctx.current_step];
+        if (step && step.responses.length) {
+            return (
+                h(
+                    tag,
+                    attributes,
+                    renderCollection(
+                        buttonTemplate,
+                        step.responses,
+                        ctx
+                    )
+                )
+            );
+        } else {
+            return null;
+        }
+    };
+
+    var spacerTemplate = function() {
+        return (
+            h('div.spacer', {style: {height: SPACER_HEIGHT + 'px'}})
+        );
+    };
+
+    var mainTemplate = function(ctx) {
+        var children = [
+            messagesTemplate(ctx)
+        ];
+        if (ctx.show_buttons) {
+            if (ctx.show_buttons_entering) {
+                children.push(buttonsTemplate(ctx, 'entering', init_data["buttons_entering_transition_duration"]));
+            } else if (ctx.show_buttons_leaving) {
+                children.push(buttonsTemplate(ctx, 'leaving', init_data["buttons_leaving_transition_duration"]));
+            } else {
+                children.push(buttonsTemplate(ctx));
+            }
+        }
+        children.push(spacerTemplate());
+        if (ctx.image_overlay) {
+            children.push(imageOverlayTemplate(ctx));
+        }
+        return h('div.chat-block', children);
+    };
+
+    return mainTemplate;
+}
+
+function ChatXBlock(runtime, element, init_data) {
+    "use strict";
+
+    var renderView = ChatTemplates(init_data);
+
+    var $element = $(element);
+    var element = $element[0];
+    var $root = $element.find('.chat-block');
+    var root = $root[0];
+
+    var __vdom = virtualDom.h();
+
+    var bot_sound = new Audio(init_data["bot_sound_url"]);
+    var response_sound = new Audio(init_data["response_sound_url"]);
+    bot_sound.preload = true;
+    response_sound.preload = true;
+
+    var last_sound_played;
+
+    /**
+     * pause: delays execution with a timeout
+     */
+    var pause = function(timeout) {
+        return new Promise(function(resolve, reject) {
+            setTimeout(resolve, timeout);
+        });
+    };
+
+    /**
+     * init: loads audio and image resources in the background
+     * and sets the initial state of the app based on the
+     * user data passed from the backend
+     */
+    var init = function() {
+        // prevent rubber band effect (overscroll) in iOS app
+        if ($('.course-wrapper.chromeless').length) {
+            $('html, body').css({
+                position: 'fixed',
+                overflow: 'hidden'
+            });
+        }
+        loadImage(init_data["bot_image_url"]);
+        loadImage(init_data["user_image_url"]);
+        Object.keys(init_data["steps"]).forEach(function(step_id) {
+            if (init_data["steps"][step_id].image_url) {
+                loadImage(init_data["steps"][step_id].image_url);
+            }
+        });
+        $element.on('click', '.response-button', submitResponse);
+        $element.on('click', '.message-body img', showImageOverlay);
+        $element.on('click', '.image-overlay', closeImageOverlay);
+        var state = init_data["user_state"];
+        state.current_step = initialStep(state);
+        state = addBotMessages(state);
+        state.scroll_delay = 0;
+        state.image_overlay = null;
+        state.image_dimensions = {};
+        applyState(state);
+        state.scroll_delay = init_data["scroll_delay"];
+        return state
+    };
+
+    /**
+     * loadImage: helper to load an image in the background
+     */
+    var loadImage = function(url) {
+        var promise = $.Deferred();
+        var result = new Image();
+        result.addEventListener("load", function() {
+            state.image_dimensions[url] = {
+                width: result.naturalWidth,
+                height: result.naturalHeight
+            };
+            promise.resolve(result);
+        }, false);
+        result.addEventListener("error", function() {
+            promise.reject();
+        }, false);
+        result.src = url;
+        return promise;
+    };
+
+    /**
+     * playSound: plays a sound and sets it as the last sound played
+     */
+    var playSound = function(sound) {
+        sound.pause();
+        sound.muted = false;
+        sound.loop = false;
+        // Only set currentTime if the sound has finished loading, otherwise some versions of FF
+        // throw an error (see bug https://bugzilla.mozilla.org/show_bug.cgi?id=1188887)
+        if (sound.readyState === 4) {
+            sound.currentTime = 0;
+        }
+        sound.play();
+        last_sound_played = sound;
+    };
+
+    /**
+     * playSoundInMutedLoop: Mobile Safari will only play sounds when initiated
+     * from event handlers resulting from direct user interaction.
+     * Since our "bot" sound needs to play after the user chooses a response,
+     * but not immediately on click/tap, we use a little trick to force Mobile Safari
+     * to play the sound at the right time - we start playing the sound muted in loop mode
+     * directly in the event handler, and then at the appropriate time unmute the sound,
+     * stop the loop and let it play unmuted (using playSound above).
+     */
+    var playSoundInMutedLoop = function(sound) {
+        sound.muted = true;
+        sound.loop = true;
+        sound.play();
+    };
+
+    /**
+     * createMessageFromSender: returns an object that can be added to
+     * the chat history on behalf of the sender (bot or user)
+     */
+    var createMessageFromSender = function(message, sender_id, step_id) {
+        return {
+            from: sender_id,
+            message: message,
+            step: step_id
+        };
+    };
+
+    /**
+     * hideButtons: sets css class on the buttons container to trigger the css transition
+     */
+    var hideButtons = function() {
+        state.show_buttons_entering = false;
+        state.show_buttons_leaving = true;
+        state.new_user_message = undefined;
+        applyState(state);
+    };
+
+    /**
+     * waitForButtonsHiding: sets a pause while the css transition for hiding the buttons container takes place
+     */
+    var waitForButtonsHiding = function() {
+        return pause(init_data["buttons_leaving_transition_duration"]);
+    };
+
+    /**
+     * createUserMessage: removes the buttons container and creates the new user message
+     * triggering the fadein css animation
+     */
+    var createUserMessage = function(event) {
+        return function() {
+            var $response = $(event.target).closest('.response-button');
+            var message = JSON.parse($response.attr('data-message'));
+            var step = state.current_step;
+            state.new_user_message = createMessageFromSender(message, init_data["user_id"], step);
+            state.show_buttons = false;
+            state.show_buttons_leaving = false;
+            applyState(state);
+        };
+    };
+
+    /**
+     * waitUserMessageAnimation: sets a pause for each animation on a new user message
+     * (one for the message fading in and one for the message being displayed normally in the chat history)
+     */
+    var waitUserMessageAnimation = function() {
+        var user_message_animations = 2;
+        var delay_split = init_data["user_message_animation_delay"] / user_message_animations;
+        return pause(delay_split);
+    };
+
+    /**
+     * addUserMessageToHistory: adds the new user message to the chat history
+     */
+    var addUserMessageToHistory = function(event) {
+        return function() {
+            var $response = $(event.target).closest('.response-button');
+            var step_id = JSON.parse($response.attr('data-step_id'));
+            state.messages.push(state.new_user_message);
+            state.new_user_message = undefined;
+            state.current_step = step_id;
+            applyState(state);
+        };
+    };
+
+    /**
+     * sendStateToServer: submits the state asyncrhonously
+     */
+    var sendStateToServer = function() {
+        // Submit state to backend
+        $.ajax({
+            type: 'POST',
+            url: runtime.handlerUrl(element, "submit_response"),
+            data: JSON.stringify(state)
+        });
+    };
+
+    /**
+     * addNewBotMessages: adds bot messages after the users' response has been submitted
+     */
+    var addNewBotMessages = function(state) {
+        return function() {
+            addBotMessages(state);
+        };
+    };
+
+    /**
+     * submitResponse: event handler for clicking a response button. Gets data attributes
+     * from the button and adds the response and new bot messages to the chat history
+     * setting pauses and fade animations in between
+     */
+    var submitResponse = function(event) {
+        var promise;
+        playSound(response_sound);
+        playSoundInMutedLoop(bot_sound);
+        promise = new Promise(function(resolve, reject) {
+            resolve();
+        }).then(hideButtons)
+          .then(waitForButtonsHiding)
+          .then(createUserMessage(event))
+          .then(waitUserMessageAnimation)
+          .then(addUserMessageToHistory(event))
+          .then(waitUserMessageAnimation)
+          .then(sendStateToServer)
+          .then(addNewBotMessages(state));
+    };
+
+    var showImageOverlay = function(event) {
+        var img = event.currentTarget;
+        state.image_overlay = {
+            image_url: img.src,
+            image_alt: img.alt
+        };
+        applyState(state);
+    };
+
+    var closeImageOverlay = function(event) {
+        state.image_overlay = null;
+        applyState(state);
+    };
+
+    /**
+     * applyState: patches the DOM and sets a new chat block based on the passed state.
+     * It also animates the transition
+     */
+    var applyState = function(state) {
+        var new_vdom = render(state);
+        var patches = virtualDom.diff(__vdom, new_vdom);
+        root = virtualDom.patch(root, patches);
+        $root = $(root);
+        animate(state);
+        __vdom = new_vdom;
+    };
+
+    /**
+     * animate: scrolls to the last message displayed and plays the bot sound
+     * if there are response buttons and the bot sound wasn't the last played
+     */
+    var animate = function(state) {
+        var $messages = $root.find('.messages');
+        if (!state.scroll_delay) {
+            $messages.scrollTop($messages.prop("scrollHeight"));
+        } else if (state.show_spinner || (state.show_buttons && !state.show_buttons_leaving) || state.new_user_message) {
+            $messages.animate(
+                {scrollTop: $messages.prop("scrollHeight")},
+                {duration: state.scroll_delay, queue: false});
+        }
+        if (last_sound_played != bot_sound && $root.find('.bot.fadein-message').length) {
+            playSound(bot_sound);
+        }
+    };
+
+    /**
+     * filterNotDisplayed: returns messages that have not been displayed
+     * by the bot in the chat yet.
+     */
+    var filterNotDisplayed = function(messages, bot_message_strings_in_chat) {
+        return messages.filter(function(message) {
+            return bot_message_strings_in_chat.indexOf(message) === -1;
+        });
+    };
+
+    /**
+     * stepMessages: returns a string for each step.messages item in the list
+     * If the item contains more than one element, it tries to randomly select messages still
+     * not displayed by the bot in the history
+     */
+    var stepMessages = function(step, bot_message_strings_in_chat) {
+        var result = [];
+        var messages_not_displayed;
+        var candidate_messages;
+        var message_index;
+        if (step && step.messages.length) {
+            step.messages.forEach(function(messages) {
+                messages_not_displayed = filterNotDisplayed(messages, bot_message_strings_in_chat);
+                if (messages_not_displayed.length) {
+                    candidate_messages = messages_not_displayed;
+                } else {
+                    candidate_messages = messages;
+                }
+                message_index = Math.floor(Math.random() * candidate_messages.length);
+                result.push(candidate_messages[message_index]);
+            });
+        }
+        return result;
+    }
+
+    /**
+     * filterBotMessages: returns a list of strings with all the messages sent by the bot
+     */
+    var filterBotMessages = function(state) {
+        var result = [];
+        if (state.messages && state.messages.length) {
+            result = state.messages.filter(function(message) {
+                return message.from == init_data["bot_id"];
+            }).map(function(message) {
+                return message.message;
+            });
+        }
+        return result;
+    };
+
+    /**
+     * initialStep: if no messages have been exchanged yet returns the first step.
+     * It also verifies that the current step is a valid step. If the current step
+     * is not in the list of steps anymore (maybe it was deleted or changed), the UI
+     * should just display the chat history
+     */
+    var initialStep = function(state) {
+        var result;
+        var first_step = init_data["first_step"];
+        if (!state.messages.length && first_step) {
+            result = first_step.id;
+        } else if (state.current_step in init_data["steps"]) {
+            result = state.current_step;
+        };
+        return result;
+    };
+
+    /**
+     * lastMessageSender: returns the sender id of the last message in the chat
+     */
+    var lastMessageSender = function(oldState) {
+        return oldState.messages[oldState.messages.length - 1].from;
+    };
+
+    /**
+     * showSpinner: shows the ... spinner before adding a bot message to the chat
+     */
+    var showSpinner = function(state) {
+        return function() {
+            state.show_spinner = true;
+            state.new_bot_message = undefined;
+            applyState(state);
+        };
+    };
+
+    /**
+     * waitBotMessageAnimation: sets a pause for each animation on a new bot message
+     * (one for the spinner and one for the message being displayed normally in the chat history).
+     * If a message is passed an extra delay is added to the pause based on the message length
+     */
+    var waitBotMessageAnimation = function(message) {
+        var typing_delay_per_character = 0;
+        var bot_message_animations = 2;
+        var delay_split = init_data["bot_message_animation_delay"] / bot_message_animations;
+        if (message) {
+            typing_delay_per_character = message.length * init_data["typing_delay_per_character"];
+        }
+        return function() {
+            return pause(delay_split + typing_delay_per_character);
+        };
+    };
+
+    /**
+     * createBotMessage: hides the ... spinner and creates the new message with a fade in animation
+     */
+    var createBotMessage = function(state, step_message, step) {
+        return function() {
+            state.show_spinner = false;
+            state.new_bot_message = createMessageFromSender(step_message, init_data["bot_id"], step.id);
+            applyState(state);
+        };
+    };
+
+    /**
+     * addBotMessageToHistory: adds the new bot message to the chat history and if it's the last
+     * message in the step shows the response buttons
+     */
+    var addBotMessageToHistory = function(state, is_last_message_in_step) {
+        return function() {
+            state.show_spinner = false;
+            state.messages.push(state.new_bot_message);
+            state.new_bot_message = undefined;
+            if (is_last_message_in_step) {
+                state.show_buttons = true;
+                applyState(state);
+                state.show_buttons_entering = true;
+            }
+            applyState(state);
+        };
+    };
+
+    /**
+     * addBotMessages: checks if the bot was not the last sending messages and then
+     * adds each step message first to a temporary typing attribute and then to the
+     * chat history pausing execution between renderings
+     */
+    var addBotMessages = function(oldState) {
+        var promise;
+        var bot_message_strings_in_chat = filterBotMessages(oldState);
+        var step = init_data["steps"][oldState.current_step];
+        var step_messages = stepMessages(step, bot_message_strings_in_chat);
+        // If the bot was the last sending messages
+        // and the messages selected from the step are the same
+        // do nothing
+        if (oldState.messages.length &&
+            lastMessageSender(oldState) == init_data["bot_id"]) {
+            return oldState;
+        }
+        if (step_messages.length) {
+            promise = new Promise(function(resolve, reject) {
+                resolve();
+            });
+            step_messages.reduce(function(acc_promise, step_message, index, array) {
+                var is_last_message_in_step = index === (step_messages.length - 1);
+                return acc_promise
+                    .then(showSpinner(oldState))
+                    .then(waitBotMessageAnimation(step_message))
+                    .then(createBotMessage(oldState, step_message, step))
+                    .then(waitBotMessageAnimation)
+                    .then(addBotMessageToHistory(oldState, is_last_message_in_step));
+            }, promise);
+        }
+        return oldState;
+    };
+
+    /**
+     * render: renders the current state of the app
+     */
+    var render = function(state) {
+        var context = {
+            messages: state.messages,
+            current_step: state.current_step,
+            show_spinner: state.show_spinner,
+            new_bot_message: state.new_bot_message,
+            new_user_message: state.new_user_message,
+            show_buttons: state.show_buttons,
+            show_buttons_entering: state.show_buttons_entering,
+            show_buttons_leaving: state.show_buttons_leaving,
+            image_overlay: state.image_overlay,
+            image_dimensions: state.image_dimensions
+        };
+        return renderView(context);
+    };
+
+    var state = init();
+
+}

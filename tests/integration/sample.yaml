@@ -1,0 +1,56 @@
+- a:
+    messages:
+        - a-message1
+        - a-message2
+        - a-message3
+    responses:
+        - a-to-b-1: b
+        - a-to-b-2: b
+        - a-to-c-1: c
+- b:
+    messages:
+        - b-message1
+        - b-message2
+    responses:
+        - b-to-d-1: d
+- c:
+    messages:
+        - c-message1
+    responses:
+        - c-to-d-1: d
+        - c-to-e-1: e
+- d:
+    messages:
+        - d-message1
+    responses:
+        - d-to-f-1: f
+        - d-to-g-1: g
+- e:
+    messages:
+        - e-message1
+    responses:
+        - e-to-f-1: f
+        - e-to-g-1: g
+        - e-to-g-2: g
+- f:
+    messages:
+        - f-message1
+    responses:
+        - f-to-h-1: h
+        - f-to-i-1: i
+- g:
+    messages:
+        - g-message1
+    responses:
+        - g-to-h-1: h
+        - g-to-i-1: i
+- h:
+    messages:
+        - h-message1
+    responses:
+        - Finish: COMPLETE
+- i:
+    messages:
+        - i-message1
+    responses:
+        - Finish: COMPLETE

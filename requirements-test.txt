@@ -1,0 +1,5 @@
+Django>=1.8, <1.9
+-r requirements.txt
+-e git+https://github.com/edx/xblock-sdk.git@8eb5f174dc59c0f4e40e10eaab56753958651d17#egg=xblock-sdk
+ddt
+selenium==2.47.3  # 2.48 is not working atm
