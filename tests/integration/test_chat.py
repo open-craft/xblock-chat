@@ -718,3 +718,49 @@ class TestChat(StudioEditableBaseTest):
             '//button[contains(text(), "2")]').click()
         bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
         self.assertEqual(bot_messages[-1].text, "Yep, that's correct! Good job John.")
+
+    def test_state_saved_to_local_storage(self):
+        self.configure_block(yaml_good)
+        self.element = self.go_to_view("student_view")
+        # localStorage should be empty initially.
+        self.assertEqual(self.browser.execute_script('return localStorage.length'), 0)
+        # Select a response to trigger saving the state.
+        self.element.find_element_by_xpath('//button[contains(text(), "2")]').click()
+        # localStorage should now contain user state.
+        self.assertEqual(self.browser.execute_script('return localStorage.length'), 1)
+        key = self.browser.execute_script('return localStorage.key(0)')
+        self.assertTrue(key.startswith('chat-xblock-'))
+        state = self.browser.execute_script('return JSON.parse(localStorage.getItem("{}"))'.format(key))
+        self.assertEqual(len(state['messages']), 2)
+        self.assertEqual(state['current_step'], 'step2')
+
+    def test_state_loaded_from_local_storage(self):
+        def is_step2_visible():
+            """ Helper function that checks whether message from step2 is displayed. """
+            step2_message = "Yep, that's correct! Good job."
+            step2_selector = '//p[contains(text(), "{}")]'.format(step2_message)
+            elements = self.element.find_elements_by_xpath(step2_selector)
+            return len(elements) > 0
+
+        self.configure_block(yaml_good)
+        self.element = self.go_to_view("student_view")
+        # Before clicking the button, we should not see message from step2:
+        self.assertFalse(is_step2_visible())
+        # Select a response to trigger saving the state.
+        self.element.find_element_by_xpath('//button[contains(text(), "2")]').click()
+        # We should now see the message from step2.
+        self.assertTrue(is_step2_visible())
+        # Patch the _get_user_state method to return a blank state.
+        with patch('chat.chat.ChatXBlock._get_user_state') as mock_state:
+            mock_state.return_value = {'messages': [], 'current_step': None}
+            # Reload the page.
+            self.element = self.go_to_view('student_view')
+            # Observe that we can still see message from step2 after reload
+            # (state was loaded from localStorage).
+            self.assertTrue(is_step2_visible())
+            # Observe that upon clearing localStorage and reloading the page,
+            # step2 is no longer visible.
+            self.browser.execute_script('localStorage.clear()')
+            self.element = self.go_to_view('student_view')
+            self.assertFalse(is_step2_visible())
+

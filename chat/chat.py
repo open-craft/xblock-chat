@@ -204,6 +204,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         steps = self._steps_as_dict
         first_step = steps[self._steps_as_list[0]["id"]] if steps else None
         return {
+            "block_id": self._get_block_id(),
             "bot_image_url": (
                 self._expand_static_url(self.bot_image_url)
                 if self.bot_image_url else self._default_bot_image_url()
@@ -239,6 +240,19 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         current_user = User.objects.get(username=username)  # pylint: disable=no-member
         urls = get_profile_image_urls_for_user(current_user)
         return urls.get('large')
+
+    def _get_block_id(self):
+        """
+        Return unique ID of this block. Useful for HTML ID attributes.
+
+        Works both in LMS/Studio and workbench runtimes:
+        - In LMS/Studio, use the location.html_id method.
+        - In the workbench, use the usage_id.
+        """
+        if hasattr(self, 'location'):
+            return self.location.html_id()  # pylint: disable=no-member
+        else:
+            return unicode(self.scope_ids.usage_id)
 
     @XBlock.handler
     def get_user_state(self, request, suffix=""):
