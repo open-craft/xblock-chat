@@ -377,7 +377,13 @@ function ChatXBlock(runtime, element, init_data) {
         // Only set currentTime if the sound has finished loading, otherwise some versions of FF
         // throw an error (see bug https://bugzilla.mozilla.org/show_bug.cgi?id=1188887)
         if (sound.readyState === 4) {
-            sound.currentTime = 0;
+            // Some versions of FF may still throw InvalidStateError when trying to set currentTime
+            // in some cases, so wrap it in a try/catch.
+            try {
+                sound.currentTime = 0;
+            } catch (e) {
+                // ignore
+            }
         }
         sound.play();
         last_sound_played = sound;

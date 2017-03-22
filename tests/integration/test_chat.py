@@ -265,9 +265,6 @@ class TestChat(StudioEditableBaseTest):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-    def wait_until_buttons_are_displayed(self):
-        self.wait_until_exists('div.buttons.entering')
-
     def wait_for_ajax(self, timeout=15):
         """
         Wait for jQuery to be loaded and for all ajax requests to finish.
@@ -278,6 +275,9 @@ class TestChat(StudioEditableBaseTest):
             return self.browser.execute_script("return typeof(jQuery)!='undefined' && jQuery.active==0")
 
         EmptyPromise(is_ajax_finished, "Finished waiting for ajax requests.", timeout=timeout).fulfill()
+
+    def wait_until_buttons_are_displayed(self):
+        self.wait_until_exists('div.buttons.entering')
 
     def click_button(self, text):
         xpath_selector = '//button[contains(text(), "{}")]'.format(text)
