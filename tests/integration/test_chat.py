@@ -268,7 +268,6 @@ class TestChat(StudioEditableBaseTest):
     def wait_until_buttons_are_displayed(self):
         self.wait_until_exists('div.buttons.entering')
 
-
     def wait_for_ajax(self, timeout=15):
         """
         Wait for jQuery to be loaded and for all ajax requests to finish.
@@ -383,8 +382,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, step_a_response_labels)
         # go to step b
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "a-to-b-1")]').click()
+        self.click_button('a-to-b-1')
         self.wait_until_buttons_are_displayed()
         step_b_response_labels = [u'b-to-d-1']
         button_labels = [
@@ -394,8 +392,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, step_b_response_labels)
         # go to step d
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "b-to-d-1")]').click()
+        self.click_button('b-to-d-1')
         self.wait_until_buttons_are_displayed()
         step_d_response_labels = [u'd-to-f-1', u'd-to-g-1']
         button_labels = [
@@ -405,8 +402,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, step_d_response_labels)
         # go to step f
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "d-to-f-1")]').click()
+        self.click_button('d-to-f-1')
         self.wait_until_buttons_are_displayed()
         step_f_response_labels = [u'f-to-h-1', u'f-to-i-1']
         button_labels = [
@@ -416,8 +412,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, step_f_response_labels)
         # go to step i
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "f-to-i-1")]').click()
+        self.click_button('f-to-i-1')
         self.wait_until_buttons_are_displayed()
         step_i_response_labels = [u'Finish']
         button_labels = [
@@ -453,21 +448,17 @@ class TestChat(StudioEditableBaseTest):
         # save initial bot message
         first_bot_message = self.element.find_element_by_css_selector(selector).text
         # select wrong answer and try again
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         # the second message displayed has to be different to the initial one
         self.wait_until_buttons_are_displayed()
         second_bot_message = self.element.find_element_by_css_selector(selector).text
         self.assertNotEqual(second_bot_message, first_bot_message)
         # select wrong answer and try again
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         self.wait_until_buttons_are_displayed()
         # the third message displayed has to be different to the other two
         third_bot_message = self.element.find_element_by_css_selector(selector).text
@@ -475,11 +466,9 @@ class TestChat(StudioEditableBaseTest):
         self.assertNotEqual(third_bot_message, second_bot_message)
         # select wrong answer and try again
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         self.wait_until_buttons_are_displayed()
         # the forth message displayed has to be different to the other three
         forth_bot_message = self.element.find_element_by_css_selector(selector).text
@@ -488,11 +477,9 @@ class TestChat(StudioEditableBaseTest):
         self.assertNotEqual(forth_bot_message, third_bot_message)
         # I know, this test can be optimized... now the fifth
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         self.wait_until_buttons_are_displayed()
         fifth_bot_message = self.element.find_element_by_css_selector(selector).text
         self.assertNotEqual(fifth_bot_message, first_bot_message)
@@ -521,8 +508,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, ["2", "3"])
         # click on 3
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         bot_messages = ["Hmm, no, it's not 3. (It's less.) Would you like to try again?"]
         bot_message = self.element.find_elements_by_css_selector('.messages .message-body p')[-1].text
         self.assertIn(bot_message, bot_messages)
@@ -613,11 +599,9 @@ class TestChat(StudioEditableBaseTest):
         self.assertEqual(img.get_attribute('alt'), 'This is another image in localhost')
         # Select wrong answer and try again a few times
         for i in range(3):
-            self.element.find_element_by_xpath(
-                '//button[contains(text(), "3")]').click()
+            self.click_button('3')
             self.wait_until_buttons_are_displayed()
-            self.element.find_element_by_xpath(
-                '//button[contains(text(), "Yes please")]').click()
+            self.click_button('Yes please')
             self.wait_until_buttons_are_displayed()
         # We have seven bot messages displayed by now
         bot_messages = self.element.find_elements_by_css_selector(selector)
@@ -678,8 +662,7 @@ class TestChat(StudioEditableBaseTest):
         first_message_1_5 = bot_messages[4].text
         self.assertIn(first_message_1_5, ['message step1.5.a', 'message step1.5.b', 'message step1.5.c'])
         # Let's repeat step 1
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "go back to step1")]').click()
+        self.click_button('go back to step1')
         self.wait_until_buttons_are_displayed()
         # Since messages 1.3 and 1.5 have subitems in them they show different options the second time
         bot_messages = self.element.find_elements_by_css_selector(selector)
@@ -711,7 +694,7 @@ class TestChat(StudioEditableBaseTest):
         self.configure_block(yaml_good, avatar_border_color='#00ffff')
         self.element = self.go_to_view("student_view")
         # Select a response to get the user's avatar
-        self.element.find_element_by_xpath('//button[contains(text(), "3")]').click()
+        self.click_button('3')
         # Get the avatar images for the three messages
         images = self.element.find_elements_by_css_selector('.messages .message .avatar img')
         # The images have the border-color set
@@ -738,19 +721,16 @@ class TestChat(StudioEditableBaseTest):
         # The name placeholder is replaced with the user's full name
         self.assertEqual(bot_messages[-1].text, "Hello John, what is 1+1?")
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
         self.assertEqual(
             bot_messages[-1].text,
             "Hmm, no John, it's not 3. (It's less.) Would you like to try again?"
         )
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "2")]').click()
+        self.click_button('2')
         bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
         self.assertEqual(bot_messages[-1].text, "Yep, that's correct! Good job John.")
 
@@ -760,7 +740,7 @@ class TestChat(StudioEditableBaseTest):
         # localStorage should be empty initially.
         self.assertEqual(self.browser.execute_script('return localStorage.length'), 0)
         # Select a response to trigger saving the state.
-        self.element.find_element_by_xpath('//button[contains(text(), "2")]').click()
+        self.click_button('2')
         # localStorage should now contain user state.
         self.assertEqual(self.browser.execute_script('return localStorage.length'), 1)
         key = self.browser.execute_script('return localStorage.key(0)')
@@ -782,7 +762,7 @@ class TestChat(StudioEditableBaseTest):
         # Before clicking the button, we should not see message from step2:
         self.assertFalse(is_step2_visible())
         # Select a response to trigger saving the state.
-        self.element.find_element_by_xpath('//button[contains(text(), "2")]').click()
+        self.click_button('2')
         # We should now see the message from step2.
         self.assertTrue(is_step2_visible())
         # Patch the _get_user_state method to return a blank state.
