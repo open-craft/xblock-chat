@@ -4,10 +4,11 @@ import yaml
 import re
 
 from ddt import ddt
-from mock import patch
+from mock import ANY, patch
 
 from django.test.client import Client
 
+from bok_choy.promise import EmptyPromise
 from xblock.reference.user_service import XBlockUser
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable_test import StudioEditableBaseTest
@@ -203,6 +204,24 @@ real_image_url = """
         - No thanks: null
 """
 
+yaml_final_steps = """
+- 1:
+    messages: What would you like to test?
+    responses:
+        - Response that points to non-existing step: 2
+        - Response that points to existing step with no further responses: 3
+- 2:
+    messages: Alright! Clicking the response will complete the chat.
+    responses:
+        - OK: FINAL_STEP_MARKER
+- 3:
+    messages: Clicking the response will lead to a step with no further responses, completing the chat.
+    responses:
+        - OK: 4
+- 4:
+    messages: This is the final step, no further response available.
+"""
+
 
 @ddt
 class TestChat(StudioEditableBaseTest):
@@ -248,6 +267,22 @@ class TestChat(StudioEditableBaseTest):
 
     def wait_until_buttons_are_displayed(self):
         self.wait_until_exists('div.buttons.entering')
+
+
+    def wait_for_ajax(self, timeout=15):
+        """
+        Wait for jQuery to be loaded and for all ajax requests to finish.
+        Same as bok-choy's PageObject.wait_for_ajax()
+        """
+        def is_ajax_finished():
+            """ Check if all the ajax calls on the current page have completed. """
+            return self.browser.execute_script("return typeof(jQuery)!='undefined' && jQuery.active==0")
+
+        EmptyPromise(is_ajax_finished, "Finished waiting for ajax requests.", timeout=timeout).fulfill()
+
+    def click_button(self, text):
+        xpath_selector = '//button[contains(text(), "{}")]'.format(text)
+        self.element.find_element_by_xpath(xpath_selector).click()
 
     def expect_error_message(self, expected_message):
         notification = self.dequeue_runtime_notification()
@@ -764,3 +799,22 @@ class TestChat(StudioEditableBaseTest):
             self.element = self.go_to_view('student_view')
             self.assertFalse(is_step2_visible())
 
+    @patch('workbench.runtime.WorkbenchRuntime.publish')
+    def test_complete_event_emitted_with_non_existing_step(self, mock_publish):
+        self.configure_block(yaml_final_steps)
+        self.element = self.go_to_view('student_view')
+        self.click_button('Response that points to non-existing step')
+        self.assertFalse(mock_publish.called)
+        self.click_button('OK')
+        self.wait_for_ajax()
+        mock_publish.assert_called_with(ANY, 'xblock.chat.complete', {'final_step': 'FINAL_STEP_MARKER'})
+
+    @patch('workbench.runtime.WorkbenchRuntime.publish')
+    def test_complete_event_emitted_with_step_without_responses(self, mock_publish):
+        self.configure_block(yaml_final_steps)
+        self.element = self.go_to_view('student_view')
+        self.click_button('Response that points to existing step with no further responses')
+        self.assertFalse(mock_publish.called)
+        self.click_button('OK')
+        self.wait_for_ajax()
+        mock_publish.assert_called_with(ANY, 'xblock.chat.complete', {'final_step': '4'})

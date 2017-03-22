@@ -269,12 +269,28 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             "current_step": self.current_step,
         }
 
+    def _is_final_step(self, step):
+        """Returns true if current step doesn't exist or has no responses (is final step)."""
+        steps_dict = self._steps_as_dict
+        # Step with this ID does not exists, which means the chat is complete.
+        if step not in steps_dict:
+            return True
+        # Step exists, but has no user responses available, which means this is the final step.
+        if not steps_dict[step]['responses']:
+            return True
+        # Step exists and has responses for the user to choose from, so this is not the final step.
+        return False
+
     @XBlock.json_handler
     def submit_response(self, data, suffix=''):
         """Saves the user state sent from the front end"""
         if len(data["messages"]) > len(self.messages):
             self.messages = data["messages"]
         self.current_step = data["current_step"]
+        # Emit an event if chat is complete.
+        if self._is_final_step(self.current_step):
+            data = {'final_step': self.current_step}
+            self.runtime.publish(self, 'xblock.chat.complete', data)
 
     @XBlock.handler
     def serve_audio(self, request, wav_name):
@@ -462,7 +478,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         content = step.values()[0]
         messages = self._normalize_step_messages(content["messages"])
         return {
-            "id": step.keys()[0],
+            "id": unicode(step.keys()[0]),
             "messages": messages,
             "image_url": content.get("image-url"),
             "image_alt": content.get("image-alt"),
