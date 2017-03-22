@@ -32,7 +32,7 @@ from .default_data import NAME_PLACEHOLDER, TYPING_DELAY_PER_CHARACTER
 from .utils import _
 
 try:
-    from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user  # pylint: disable=import-error
+    from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
 except ImportError:
     # This helper is not necessary when running tests because the
     # ChatXBlock._user_image_url method is patched

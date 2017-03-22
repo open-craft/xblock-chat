@@ -1,5 +1,6 @@
 """Chat XBlock - Utils"""
 
+
 def _(text):
     """
     Dummy `gettext` replacement to make string extraction tools
