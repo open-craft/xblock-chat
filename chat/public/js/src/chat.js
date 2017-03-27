@@ -265,6 +265,45 @@ function ChatXBlock(runtime, element, init_data) {
     var last_sound_played;
 
     /**
+     * localStorageKey: returns a key under which state for this block instance
+     * is stored in localStorage.
+     */
+    var localStorageKey = function() {
+        return 'chat-xblock-' + init_data["block_id"];
+    };
+
+    /**
+     * getStateFromLocalStorage: returns state saved in local storage, or null if it does not exist.
+     */
+    var getStateFromLocalStorage = function() {
+        var key = localStorageKey();
+        var state = null;
+        try {
+            state = localStorage.getItem(key);
+        } catch (e) {
+            // Fetching state from local storage will fail if localStorage is not available,
+            // or if browser settings forbid access to localStorage.
+            // Return null in that case.
+            return null;
+        }
+        return JSON.parse(state);
+    };
+
+    /**
+     * saveStateToLocalStorage: stores state to local storage. Ignores errors.
+     */
+    var saveStateToLocalStorage = function(serialized_state) {
+        var key = localStorageKey();
+        try {
+            localStorage.setItem(key, serialized_state);
+        } catch (e) {
+            // Storing state to local storage will fail if localStorage is not available,
+            // or if browser settings forbid access to localStorage.
+            // There is nothing we can do about that, so just ignore the error.
+        }
+    };
+
+    /**
      * pause: delays execution with a timeout
      */
     var pause = function(timeout) {
@@ -296,7 +335,8 @@ function ChatXBlock(runtime, element, init_data) {
         $element.on('click', '.response-button', submitResponse);
         $element.on('click', '.message-body img', showImageOverlay);
         $element.on('click', '.image-overlay', closeImageOverlay);
-        var state = init_data["user_state"];
+        // Try to load state from local storage and fall back to init_data.
+        var state = getStateFromLocalStorage() || init_data["user_state"];
         state.current_step = initialStep(state);
         state = addBotMessages(state);
         state.scroll_delay = 0;
@@ -337,7 +377,13 @@ function ChatXBlock(runtime, element, init_data) {
         // Only set currentTime if the sound has finished loading, otherwise some versions of FF
         // throw an error (see bug https://bugzilla.mozilla.org/show_bug.cgi?id=1188887)
         if (sound.readyState === 4) {
-            sound.currentTime = 0;
+            // Some versions of FF may still throw InvalidStateError when trying to set currentTime
+            // in some cases, so wrap it in a try/catch.
+            try {
+                sound.currentTime = 0;
+            } catch (e) {
+                // ignore
+            }
         }
         sound.play();
         last_sound_played = sound;
@@ -428,14 +474,20 @@ function ChatXBlock(runtime, element, init_data) {
     };
 
     /**
-     * sendStateToServer: submits the state asyncrhonously
+     * saveState: stores state to localStorage and sends it to the server.
      */
-    var sendStateToServer = function() {
-        // Submit state to backend
+    var saveState = function() {
+        var serialized_state = JSON.stringify({
+            messages: state.messages,
+            current_step: state.current_step
+        });
+        // Save to localStorage.
+        saveStateToLocalStorage(serialized_state);
+        // Submit state to backend.
         $.ajax({
             type: 'POST',
             url: runtime.handlerUrl(element, "submit_response"),
-            data: JSON.stringify(state)
+            data: serialized_state
         });
     };
 
@@ -465,7 +517,7 @@ function ChatXBlock(runtime, element, init_data) {
           .then(waitUserMessageAnimation)
           .then(addUserMessageToHistory(event))
           .then(waitUserMessageAnimation)
-          .then(sendStateToServer)
+          .then(saveState)
           .then(addNewBotMessages(state));
     };
 

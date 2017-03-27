@@ -4,10 +4,11 @@ import yaml
 import re
 
 from ddt import ddt
-from mock import patch
+from mock import ANY, patch
 
 from django.test.client import Client
 
+from bok_choy.promise import EmptyPromise
 from xblock.reference.user_service import XBlockUser
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable_test import StudioEditableBaseTest
@@ -203,6 +204,24 @@ real_image_url = """
         - No thanks: null
 """
 
+yaml_final_steps = """
+- 1:
+    messages: What would you like to test?
+    responses:
+        - Response that points to non-existing step: 2
+        - Response that points to existing step with no further responses: 3
+- 2:
+    messages: Alright! Clicking the response will complete the chat.
+    responses:
+        - OK: FINAL_STEP_MARKER
+- 3:
+    messages: Clicking the response will lead to a step with no further responses, completing the chat.
+    responses:
+        - OK: 4
+- 4:
+    messages: This is the final step, no further response available.
+"""
+
 
 @ddt
 class TestChat(StudioEditableBaseTest):
@@ -246,8 +265,23 @@ class TestChat(StudioEditableBaseTest):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+    def wait_for_ajax(self, timeout=15):
+        """
+        Wait for jQuery to be loaded and for all ajax requests to finish.
+        Same as bok-choy's PageObject.wait_for_ajax()
+        """
+        def is_ajax_finished():
+            """ Check if all the ajax calls on the current page have completed. """
+            return self.browser.execute_script("return typeof(jQuery)!='undefined' && jQuery.active==0")
+
+        EmptyPromise(is_ajax_finished, "Finished waiting for ajax requests.", timeout=timeout).fulfill()
+
     def wait_until_buttons_are_displayed(self):
         self.wait_until_exists('div.buttons.entering')
+
+    def click_button(self, text):
+        xpath_selector = '//button[contains(text(), "{}")]'.format(text)
+        self.element.find_element_by_xpath(xpath_selector).click()
 
     def expect_error_message(self, expected_message):
         notification = self.dequeue_runtime_notification()
@@ -348,8 +382,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, step_a_response_labels)
         # go to step b
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "a-to-b-1")]').click()
+        self.click_button('a-to-b-1')
         self.wait_until_buttons_are_displayed()
         step_b_response_labels = [u'b-to-d-1']
         button_labels = [
@@ -359,8 +392,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, step_b_response_labels)
         # go to step d
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "b-to-d-1")]').click()
+        self.click_button('b-to-d-1')
         self.wait_until_buttons_are_displayed()
         step_d_response_labels = [u'd-to-f-1', u'd-to-g-1']
         button_labels = [
@@ -370,8 +402,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, step_d_response_labels)
         # go to step f
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "d-to-f-1")]').click()
+        self.click_button('d-to-f-1')
         self.wait_until_buttons_are_displayed()
         step_f_response_labels = [u'f-to-h-1', u'f-to-i-1']
         button_labels = [
@@ -381,8 +412,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, step_f_response_labels)
         # go to step i
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "f-to-i-1")]').click()
+        self.click_button('f-to-i-1')
         self.wait_until_buttons_are_displayed()
         step_i_response_labels = [u'Finish']
         button_labels = [
@@ -418,21 +448,17 @@ class TestChat(StudioEditableBaseTest):
         # save initial bot message
         first_bot_message = self.element.find_element_by_css_selector(selector).text
         # select wrong answer and try again
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         # the second message displayed has to be different to the initial one
         self.wait_until_buttons_are_displayed()
         second_bot_message = self.element.find_element_by_css_selector(selector).text
         self.assertNotEqual(second_bot_message, first_bot_message)
         # select wrong answer and try again
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         self.wait_until_buttons_are_displayed()
         # the third message displayed has to be different to the other two
         third_bot_message = self.element.find_element_by_css_selector(selector).text
@@ -440,11 +466,9 @@ class TestChat(StudioEditableBaseTest):
         self.assertNotEqual(third_bot_message, second_bot_message)
         # select wrong answer and try again
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         self.wait_until_buttons_are_displayed()
         # the forth message displayed has to be different to the other three
         forth_bot_message = self.element.find_element_by_css_selector(selector).text
@@ -453,11 +477,9 @@ class TestChat(StudioEditableBaseTest):
         self.assertNotEqual(forth_bot_message, third_bot_message)
         # I know, this test can be optimized... now the fifth
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         self.wait_until_buttons_are_displayed()
         fifth_bot_message = self.element.find_element_by_css_selector(selector).text
         self.assertNotEqual(fifth_bot_message, first_bot_message)
@@ -486,8 +508,7 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, ["2", "3"])
         # click on 3
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         bot_messages = ["Hmm, no, it's not 3. (It's less.) Would you like to try again?"]
         bot_message = self.element.find_elements_by_css_selector('.messages .message-body p')[-1].text
         self.assertIn(bot_message, bot_messages)
@@ -578,11 +599,9 @@ class TestChat(StudioEditableBaseTest):
         self.assertEqual(img.get_attribute('alt'), 'This is another image in localhost')
         # Select wrong answer and try again a few times
         for i in range(3):
-            self.element.find_element_by_xpath(
-                '//button[contains(text(), "3")]').click()
+            self.click_button('3')
             self.wait_until_buttons_are_displayed()
-            self.element.find_element_by_xpath(
-                '//button[contains(text(), "Yes please")]').click()
+            self.click_button('Yes please')
             self.wait_until_buttons_are_displayed()
         # We have seven bot messages displayed by now
         bot_messages = self.element.find_elements_by_css_selector(selector)
@@ -643,8 +662,7 @@ class TestChat(StudioEditableBaseTest):
         first_message_1_5 = bot_messages[4].text
         self.assertIn(first_message_1_5, ['message step1.5.a', 'message step1.5.b', 'message step1.5.c'])
         # Let's repeat step 1
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "go back to step1")]').click()
+        self.click_button('go back to step1')
         self.wait_until_buttons_are_displayed()
         # Since messages 1.3 and 1.5 have subitems in them they show different options the second time
         bot_messages = self.element.find_elements_by_css_selector(selector)
@@ -676,7 +694,7 @@ class TestChat(StudioEditableBaseTest):
         self.configure_block(yaml_good, avatar_border_color='#00ffff')
         self.element = self.go_to_view("student_view")
         # Select a response to get the user's avatar
-        self.element.find_element_by_xpath('//button[contains(text(), "3")]').click()
+        self.click_button('3')
         # Get the avatar images for the three messages
         images = self.element.find_elements_by_css_selector('.messages .message .avatar img')
         # The images have the border-color set
@@ -703,18 +721,80 @@ class TestChat(StudioEditableBaseTest):
         # The name placeholder is replaced with the user's full name
         self.assertEqual(bot_messages[-1].text, "Hello John, what is 1+1?")
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "3")]').click()
+        self.click_button('3')
         bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
         self.assertEqual(
             bot_messages[-1].text,
             "Hmm, no John, it's not 3. (It's less.) Would you like to try again?"
         )
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "Yes please")]').click()
+        self.click_button('Yes please')
         self.wait_until_buttons_are_displayed()
-        self.element.find_element_by_xpath(
-            '//button[contains(text(), "2")]').click()
+        self.click_button('2')
         bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
         self.assertEqual(bot_messages[-1].text, "Yep, that's correct! Good job John.")
+
+    def test_state_saved_to_local_storage(self):
+        self.configure_block(yaml_good)
+        self.element = self.go_to_view("student_view")
+        # localStorage should be empty initially.
+        self.assertEqual(self.browser.execute_script('return localStorage.length'), 0)
+        # Select a response to trigger saving the state.
+        self.click_button('2')
+        # localStorage should now contain user state.
+        self.assertEqual(self.browser.execute_script('return localStorage.length'), 1)
+        key = self.browser.execute_script('return localStorage.key(0)')
+        self.assertTrue(key.startswith('chat-xblock-'))
+        state = self.browser.execute_script('return JSON.parse(localStorage.getItem("{}"))'.format(key))
+        self.assertEqual(len(state['messages']), 2)
+        self.assertEqual(state['current_step'], 'step2')
+
+    def test_state_loaded_from_local_storage(self):
+        def is_step2_visible():
+            """ Helper function that checks whether message from step2 is displayed. """
+            step2_message = "Yep, that's correct! Good job."
+            step2_selector = '//p[contains(text(), "{}")]'.format(step2_message)
+            elements = self.element.find_elements_by_xpath(step2_selector)
+            return len(elements) > 0
+
+        self.configure_block(yaml_good)
+        self.element = self.go_to_view("student_view")
+        # Before clicking the button, we should not see message from step2:
+        self.assertFalse(is_step2_visible())
+        # Select a response to trigger saving the state.
+        self.click_button('2')
+        # We should now see the message from step2.
+        self.assertTrue(is_step2_visible())
+        # Patch the _get_user_state method to return a blank state.
+        with patch('chat.chat.ChatXBlock._get_user_state') as mock_state:
+            mock_state.return_value = {'messages': [], 'current_step': None}
+            # Reload the page.
+            self.element = self.go_to_view('student_view')
+            # Observe that we can still see message from step2 after reload
+            # (state was loaded from localStorage).
+            self.assertTrue(is_step2_visible())
+            # Observe that upon clearing localStorage and reloading the page,
+            # step2 is no longer visible.
+            self.browser.execute_script('localStorage.clear()')
+            self.element = self.go_to_view('student_view')
+            self.assertFalse(is_step2_visible())
+
+    @patch('workbench.runtime.WorkbenchRuntime.publish')
+    def test_complete_event_emitted_with_non_existing_step(self, mock_publish):
+        self.configure_block(yaml_final_steps)
+        self.element = self.go_to_view('student_view')
+        self.click_button('Response that points to non-existing step')
+        self.assertFalse(mock_publish.called)
+        self.click_button('OK')
+        self.wait_for_ajax()
+        mock_publish.assert_called_with(ANY, 'xblock.chat.complete', {'final_step': 'FINAL_STEP_MARKER'})
+
+    @patch('workbench.runtime.WorkbenchRuntime.publish')
+    def test_complete_event_emitted_with_step_without_responses(self, mock_publish):
+        self.configure_block(yaml_final_steps)
+        self.element = self.go_to_view('student_view')
+        self.click_button('Response that points to existing step with no further responses')
+        self.assertFalse(mock_publish.called)
+        self.click_button('OK')
+        self.wait_for_ajax()
+        mock_publish.assert_called_with(ANY, 'xblock.chat.complete', {'final_step': '4'})

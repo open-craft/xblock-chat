@@ -32,7 +32,7 @@ from .default_data import NAME_PLACEHOLDER, TYPING_DELAY_PER_CHARACTER
 from .utils import _
 
 try:
-    from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user  # pylint: disable=import-error
+    from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
 except ImportError:
     # This helper is not necessary when running tests because the
     # ChatXBlock._user_image_url method is patched
@@ -204,6 +204,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         steps = self._steps_as_dict
         first_step = steps[self._steps_as_list[0]["id"]] if steps else None
         return {
+            "block_id": self._get_block_id(),
             "bot_image_url": (
                 self._expand_static_url(self.bot_image_url)
                 if self.bot_image_url else self._default_bot_image_url()
@@ -240,6 +241,19 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         urls = get_profile_image_urls_for_user(current_user)
         return urls.get('large')
 
+    def _get_block_id(self):
+        """
+        Return unique ID of this block. Useful for HTML ID attributes.
+
+        Works both in LMS/Studio and workbench runtimes:
+        - In LMS/Studio, use the location.html_id method.
+        - In the workbench, use the usage_id.
+        """
+        if hasattr(self, 'location'):
+            return self.location.html_id()  # pylint: disable=no-member
+        else:
+            return unicode(self.scope_ids.usage_id)
+
     @XBlock.handler
     def get_user_state(self, request, suffix=""):
         """Returns JSON representing message exchanges and step to take"""
@@ -255,12 +269,28 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             "current_step": self.current_step,
         }
 
+    def _is_final_step(self, step):
+        """Returns true if current step doesn't exist or has no responses (is final step)."""
+        steps_dict = self._steps_as_dict
+        # Step with this ID does not exists, which means the chat is complete.
+        if step not in steps_dict:
+            return True
+        # Step exists, but has no user responses available, which means this is the final step.
+        if not steps_dict[step]['responses']:
+            return True
+        # Step exists and has responses for the user to choose from, so this is not the final step.
+        return False
+
     @XBlock.json_handler
     def submit_response(self, data, suffix=''):
         """Saves the user state sent from the front end"""
         if len(data["messages"]) > len(self.messages):
             self.messages = data["messages"]
         self.current_step = data["current_step"]
+        # Emit an event if chat is complete.
+        if self._is_final_step(self.current_step):
+            data = {'final_step': self.current_step}
+            self.runtime.publish(self, 'xblock.chat.complete', data)
 
     @XBlock.handler
     def serve_audio(self, request, wav_name):
@@ -448,7 +478,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         content = step.values()[0]
         messages = self._normalize_step_messages(content["messages"])
         return {
-            "id": step.keys()[0],
+            "id": unicode(step.keys()[0]),
             "messages": messages,
             "image_url": content.get("image-url"),
             "image_alt": content.get("image-alt"),
