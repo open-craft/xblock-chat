@@ -403,8 +403,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
     def _has_valid_messages(messages):
         """Checks that messages is a string or a list of strings."""
         return (
-            isinstance(messages, basestring) or
-            (isinstance(messages, list) and messages)
+            isinstance(messages, basestring) or isinstance(messages, list)
         )
 
     def _validate_responses(self, step, responses, add_error):

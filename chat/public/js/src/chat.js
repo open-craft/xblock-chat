@@ -417,6 +417,16 @@ function ChatXBlock(runtime, element, init_data) {
     };
 
     /**
+     * showButtons: renders available user responses
+     */
+    var showButtons = function(state) {
+        state.show_buttons = true;
+        applyState(state);
+        state.show_buttons_entering = true;
+        applyState(state);
+    };
+
+    /**
      * hideButtons: sets css class on the buttons container to trigger the css transition
      */
     var hideButtons = function() {
@@ -689,11 +699,10 @@ function ChatXBlock(runtime, element, init_data) {
             state.messages.push(state.new_bot_message);
             state.new_bot_message = undefined;
             if (is_last_message_in_step) {
-                state.show_buttons = true;
+                showButtons(state);
+            } else {
                 applyState(state);
-                state.show_buttons_entering = true;
             }
-            applyState(state);
         };
     };
 
@@ -727,6 +736,8 @@ function ChatXBlock(runtime, element, init_data) {
                     .then(waitBotMessageAnimation)
                     .then(addBotMessageToHistory(oldState, is_last_message_in_step));
             }, promise);
+        } else {
+            showButtons(oldState);
         }
         return oldState;
     };
