@@ -86,6 +86,23 @@ yaml_invalid_responses = """
         - No thanks: null
 """
 
+yaml_too_many_responses = """
+- step1:
+    messages:
+        - ["What is 1+1?", "What is the sum of 1 and 1?"]
+    responses:
+        - 2: step2
+        - 3: step3
+        - 4: step3
+- step2:
+    messages: Yep, that's correct! Good job.
+- step3:
+    messages: Hmm, no, that is not correct. Would you like to try again?
+    responses:
+        - Yes please: step1
+        - No thanks: null
+"""
+
 multiple_steps = """
 - step1:
     messages:
@@ -540,7 +557,15 @@ class TestChat(StudioEditableBaseTest):
         self.expect_error_message(
             u"The 'responses' attribute of step1:\n  messages:\n  - ['What is 1+1?', "
             u"'What is the sum of 1 and 1?']\n  responses: [response a, response b] has to "
-            u"be a list of response mappings."
+            u"be a list of response mappings of maximum length 7."
+        )
+        # Test a step with too many respones (controlled by MAX_USER_RESPONSES variable)
+        with patch('chat.chat.MAX_USER_RESPONSES', 2):
+            self.configure_block(yaml_too_many_responses, expect_success=False)
+            self.expect_error_message(
+                u"The 'responses' attribute of step1:\n  messages:\n  - ['What is 1+1?', "
+                u"'What is the sum of 1 and 1?']\n  responses:\n  - {2: step2}\n  - {3: step3}\n  "
+                u"- {4: step3} has to be a list of response mappings of maximum length 2."
         )
 
     def test_image_url_validation(self):
