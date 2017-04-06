@@ -26,9 +26,9 @@ from xblock.validation import ValidationMessage
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable import StudioEditableXBlockMixin
 
-from .default_data import BOT_ID, BOT_MESSAGE_ANIMATION_DELAY, DEFAULT_DATA, USER_ID, USER_MESSAGE_ANIMATION_DELAY
+from .default_data import DEFAULT_BOT_ID, BOT_MESSAGE_ANIMATION_DELAY, DEFAULT_DATA, USER_ID, MAX_USER_RESPONSES
 from .default_data import BUTTONS_ENTERING_TRANSITION_DURATION, BUTTONS_LEAVING_TRANSITION_DURATION, SCROLL_DELAY
-from .default_data import NAME_PLACEHOLDER, TYPING_DELAY_PER_CHARACTER, MAX_USER_RESPONSES
+from .default_data import NAME_PLACEHOLDER, TYPING_DELAY_PER_CHARACTER, USER_MESSAGE_ANIMATION_DELAY
 from .utils import _
 
 try:
@@ -77,7 +77,10 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         help=_(
             "For example, http://example.com/bot.png or /static/bot.png. "
             "In Studio, you can upload images from the Content - Files & Uploads page."
+            "If using multiple bot personas, can be a YAML mapping of bot_id: image_url pairs."
         ),
+        default='',
+        multiline_editor=True,
         scope=Scope.content,
     )
 
@@ -96,7 +99,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             "List of dictionaries representing the messages exchanged "
             "between the bot and the user. Each dictionary has the form: "
             "{'from': ..., 'message': '...', 'step': id}. The possible values for "
-            "'from' are default_data.BOT_ID and default_data.USER_ID"
+            "'from' are default_data.USER_ID, default_data.DEFAULT_BOT_ID, or a custom bot ID."
         ),
         scope=Scope.user_state,
         default=[],
@@ -205,16 +208,12 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         first_step = steps[self._steps_as_list[0]["id"]] if steps else None
         return {
             "block_id": self._get_block_id(),
-            "bot_image_url": (
-                self._expand_static_url(self.bot_image_url)
-                if self.bot_image_url else self._default_bot_image_url()
-            ),
+            "bot_image_urls": self._bot_image_urls(),
             "user_image_url": self._user_image_url(),
             "bot_sound_url": self.runtime.handler_url(
                 self, 'serve_audio', 'bot.wav'),
             "response_sound_url": self.runtime.handler_url(
                 self, 'serve_audio', 'response.wav'),
-            "bot_id": BOT_ID,
             "user_id": USER_ID,
             "steps": steps,
             "first_step": first_step,
@@ -227,6 +226,27 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             "avatar_border_color": self.avatar_border_color or None,
             "typing_delay_per_character": TYPING_DELAY_PER_CHARACTER,
         }
+
+    @staticmethod
+    def _custom_bot_id(id):
+        """Prefixes user-defined bot IDs so that they don't conflict with built-in DEFAULT_BOT_ID or USER_ID."""
+        return 'custom/{}'.format(id)
+
+    def _bot_image_urls(self):
+        """Converts the value of bot_image_url field into a dict of bot_id: image_url key value pairs.
+        If the value ia a dict, it adds an entry for the default bot image.
+        If the value is a string, it assumes it represents the image url of the default bot."""
+        mapping = {DEFAULT_BOT_ID: self._default_bot_image_url()}
+
+        image_urls = yaml.load(self.bot_image_url)
+        if isinstance(image_urls, dict):
+            for bot_id in image_urls:
+                key = self._custom_bot_id(bot_id)
+                mapping[key] = self._expand_static_url(image_urls[bot_id])
+        elif isinstance(image_urls, basestring):
+            mapping[DEFAULT_BOT_ID] = self._expand_static_url(image_urls)
+
+        return mapping
 
     def _default_bot_image_url(self):
         """Returns the URL of the default bot image."""
@@ -461,9 +481,9 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         step = {
             "id": "step1",
             "messages": [
-                ["How are you?"],
-                ["How are you doing?"],
-                ["Hey", "How are you?"],
+                [{"message": "How are you?", "bot_id": "bot"}],
+                [{"message": "How are you doing?", "bot_id": "custom/other-bot"}],
+                [{"message": "Hey", "bot_id": "bot"}, {"message": "How are you?", "bot_id": "custom/third-bot"}],
             ],
             "image_url": "http://example.com/image.png",
             "image_alt": "Alternative text for image.png",
@@ -495,24 +515,39 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             for response in responses
         ]
 
-    @staticmethod
-    def _normalize_step_messages(step_messages):
+    def _normalize_step_message(self, step_message):
+        """Converts a 'step_message' into a list of message objects with 'message' and 'bot_id' entries.
+
+        The step_message may be a string, a dict with bot_id: message key value pairs, or a list
+        containing strings and/or dicts.
+
+        If the messages attribute is a string, it assumes the message belongs to the default bot."""
+
+        result = []
+        if isinstance(step_message, basestring):
+            result.append({'message': step_message, 'bot_id': DEFAULT_BOT_ID})
+        elif isinstance(step_message, dict):
+            for key in step_message:
+                bot_id = self._custom_bot_id(key)
+                result.append({'message': step_message[key], 'bot_id': bot_id})
+        elif isinstance(step_message, list):
+            for message in step_message:
+                result += self._normalize_step_message(message)
+        return result
+
+    def _normalize_step_messages(self, step_messages):
         """Converts the messages attribute into a list of lists. This is necessary for presenting
         multiple BOT messages in a row.
 
-        If the messages attribute is a string it only wraps the value in a list.
-
+        If the message attribute is a simple value (string or dict), it only wraps the value in a list.
         If the messages attribute is a list, it wraps each value in a list.
         """
         result = []
-        if isinstance(step_messages, basestring):
-            result.append([step_messages])
-        elif isinstance(step_messages, list):
+        if isinstance(step_messages, list):
             for message in step_messages:
-                if isinstance(message, basestring):
-                    result.append([message])
-                elif isinstance(message, list):
-                    result.append(message)
+                result.append(self._normalize_step_message(message))
+        else:
+            result.append(self._normalize_step_message(step_messages))
         return result
 
     def _validate_image_url(self, step, image_url, add_error):

@@ -88,10 +88,10 @@ function ChatTemplates(init_data) {
         );
     };
 
-    var botMessageContentTemplate = function(tag, children) {
+    var botMessageContentTemplate = function(bot_id, tag, children) {
         return (
             h(tag, [
-                avatarTemplate(init_data['bot_image_url']),
+                avatarTemplate(init_data['bot_image_urls'][bot_id]),
                 h('div.message-body', [
                     h('p', children)
                 ])
@@ -109,10 +109,10 @@ function ChatTemplates(init_data) {
         if (extra_css_class) {
             tag = tag.concat('.' + extra_css_class);
         }
-        return botMessageContentTemplate(tag, children);
+        return botMessageContentTemplate(message.from, tag, children);
     };
 
-    var spinnerTemplate = function() {
+    var spinnerTemplate = function(bot_id) {
         var tag = 'div.message.bot.spinner-message';
         var spinner = [
             h('div.spinner', [
@@ -121,7 +121,7 @@ function ChatTemplates(init_data) {
                 h('div.bounce3')
             ])
         ];
-        return botMessageContentTemplate(tag, spinner);
+        return botMessageContentTemplate(bot_id, tag, spinner);
     };
 
     var userMessageTemplate = function(message, extra_css_class) {
@@ -141,16 +141,18 @@ function ChatTemplates(init_data) {
 
     var messagesTemplate = function(ctx) {
         var templates = {};
-        templates[init_data["bot_id"]] = botMessageTemplate;
         templates[init_data["user_id"]] = userMessageTemplate;
+        Object.keys(init_data["bot_image_urls"]).forEach(function(bot_id) {
+            templates[bot_id] = botMessageTemplate;
+        });
         var messages = [];
         ctx.messages.forEach(function(message) {
             if (message.from in templates) {
                 messages.push(templates[message.from](message));
             }
         });
-        if (ctx.show_spinner) {
-            messages.push(spinnerTemplate());
+        if (ctx.bot_spinner) {
+            messages.push(spinnerTemplate(ctx.bot_spinner.bot_id));
         } else if (ctx.new_bot_message) {
             messages.push(botMessageTemplate(ctx.new_bot_message, 'fadein-message'));
         } else if (ctx.new_user_message) {
@@ -325,8 +327,10 @@ function ChatXBlock(runtime, element, init_data) {
                 overflow: 'hidden'
             });
         }
-        loadImage(init_data["bot_image_url"]);
         loadImage(init_data["user_image_url"]);
+        Object.keys(init_data["bot_image_urls"]).forEach(function(bot_id) {
+            loadImage(init_data["bot_image_urls"][bot_id]);
+        });
         Object.keys(init_data["steps"]).forEach(function(step_id) {
             if (init_data["steps"][step_id].image_url) {
                 loadImage(init_data["steps"][step_id].image_url);
@@ -432,7 +436,7 @@ function ChatXBlock(runtime, element, init_data) {
     var hideButtons = function() {
         state.show_buttons_entering = false;
         state.show_buttons_leaving = true;
-        state.new_user_message = undefined;
+        state.new_user_message = null;
         applyState(state);
     };
 
@@ -477,7 +481,7 @@ function ChatXBlock(runtime, element, init_data) {
             var $response = $(event.target).closest('.response-button');
             var step_id = JSON.parse($response.attr('data-step_id'));
             state.messages.push(state.new_user_message);
-            state.new_user_message = undefined;
+            state.new_user_message = null;
             state.current_step = step_id;
             applyState(state);
         };
@@ -566,7 +570,7 @@ function ChatXBlock(runtime, element, init_data) {
         var $messages = $root.find('.messages');
         if (!state.scroll_delay) {
             $messages.scrollTop($messages.prop("scrollHeight"));
-        } else if (state.show_spinner || (state.show_buttons && !state.show_buttons_leaving) || state.new_user_message) {
+        } else if (state.bot_spinner || (state.show_buttons && !state.show_buttons_leaving) || state.new_user_message) {
             $messages.animate(
                 {scrollTop: $messages.prop("scrollHeight")},
                 {duration: state.scroll_delay, queue: false});
@@ -577,28 +581,32 @@ function ChatXBlock(runtime, element, init_data) {
     };
 
     /**
-     * filterNotDisplayed: returns messages that have not been displayed
-     * by the bot in the chat yet.
+     * filterNotDisplayed: returns bot messages that have not been displayed in the chat yet.
      */
-    var filterNotDisplayed = function(messages, bot_message_strings_in_chat) {
+    var filterNotDisplayed = function(messages, displayed_messages) {
         return messages.filter(function(message) {
-            return bot_message_strings_in_chat.indexOf(message) === -1;
+            var is_displayed = displayed_messages.some(function(displayed_message) {
+                var messages_match = displayed_message.message === message.message;
+                var senders_match = displayed_message.from === message.bot_id;
+                return messages_match && senders_match;
+            });
+            return !is_displayed;
         });
     };
 
     /**
-     * stepMessages: returns a string for each step.messages item in the list
+     * stepMessages: returns a message object for each step.messages item in the list.
      * If the item contains more than one element, it tries to randomly select messages still
      * not displayed by the bot in the history
      */
-    var stepMessages = function(step, bot_message_strings_in_chat) {
+    var stepMessages = function(step, displayed_messages) {
         var result = [];
         var messages_not_displayed;
         var candidate_messages;
         var message_index;
         if (step && step.messages.length) {
             step.messages.forEach(function(messages) {
-                messages_not_displayed = filterNotDisplayed(messages, bot_message_strings_in_chat);
+                messages_not_displayed = filterNotDisplayed(messages, displayed_messages);
                 if (messages_not_displayed.length) {
                     candidate_messages = messages_not_displayed;
                 } else {
@@ -606,21 +614,6 @@ function ChatXBlock(runtime, element, init_data) {
                 }
                 message_index = Math.floor(Math.random() * candidate_messages.length);
                 result.push(candidate_messages[message_index]);
-            });
-        }
-        return result;
-    }
-
-    /**
-     * filterBotMessages: returns a list of strings with all the messages sent by the bot
-     */
-    var filterBotMessages = function(state) {
-        var result = [];
-        if (state.messages && state.messages.length) {
-            result = state.messages.filter(function(message) {
-                return message.from == init_data["bot_id"];
-            }).map(function(message) {
-                return message.message;
             });
         }
         return result;
@@ -653,10 +646,10 @@ function ChatXBlock(runtime, element, init_data) {
     /**
      * showSpinner: shows the ... spinner before adding a bot message to the chat
      */
-    var showSpinner = function(state) {
+    var showSpinner = function(state, bot_id) {
         return function() {
-            state.show_spinner = true;
-            state.new_bot_message = undefined;
+            state.bot_spinner = {bot_id: bot_id};
+            state.new_bot_message = null;
             applyState(state);
         };
     };
@@ -681,10 +674,10 @@ function ChatXBlock(runtime, element, init_data) {
     /**
      * createBotMessage: hides the ... spinner and creates the new message with a fade in animation
      */
-    var createBotMessage = function(state, step_message, step) {
+    var createBotMessage = function(state, bot_id, message, step) {
         return function() {
-            state.show_spinner = false;
-            state.new_bot_message = createMessageFromSender(step_message, init_data["bot_id"], step.id);
+            state.bot_spinner = null;
+            state.new_bot_message = createMessageFromSender(message, bot_id, step.id);
             applyState(state);
         };
     };
@@ -695,9 +688,9 @@ function ChatXBlock(runtime, element, init_data) {
      */
     var addBotMessageToHistory = function(state, is_last_message_in_step) {
         return function() {
-            state.show_spinner = false;
+            state.bot_spinner = null;
             state.messages.push(state.new_bot_message);
-            state.new_bot_message = undefined;
+            state.new_bot_message = null;
             if (is_last_message_in_step) {
                 showButtons(state);
             } else {
@@ -713,14 +706,13 @@ function ChatXBlock(runtime, element, init_data) {
      */
     var addBotMessages = function(oldState) {
         var promise;
-        var bot_message_strings_in_chat = filterBotMessages(oldState);
         var step = init_data["steps"][oldState.current_step];
-        var step_messages = stepMessages(step, bot_message_strings_in_chat);
+        var step_messages = stepMessages(step, oldState.messages);
         // If the bot was the last sending messages
         // and the messages selected from the step are the same
         // do nothing
         if (oldState.messages.length &&
-            lastMessageSender(oldState) == init_data["bot_id"]) {
+            init_data["bot_image_urls"].hasOwnProperty(lastMessageSender(oldState))) {
             return oldState;
         }
         if (step_messages.length) {
@@ -728,11 +720,13 @@ function ChatXBlock(runtime, element, init_data) {
                 resolve();
             });
             step_messages.reduce(function(acc_promise, step_message, index, array) {
+                var message = step_message.message;
+                var bot_id = step_message.bot_id;
                 var is_last_message_in_step = index === (step_messages.length - 1);
                 return acc_promise
-                    .then(showSpinner(oldState))
-                    .then(waitBotMessageAnimation(step_message))
-                    .then(createBotMessage(oldState, step_message, step))
+                    .then(showSpinner(oldState, bot_id))
+                    .then(waitBotMessageAnimation(message))
+                    .then(createBotMessage(oldState, bot_id, message, step))
                     .then(waitBotMessageAnimation)
                     .then(addBotMessageToHistory(oldState, is_last_message_in_step));
             }, promise);
@@ -749,7 +743,7 @@ function ChatXBlock(runtime, element, init_data) {
         var context = {
             messages: state.messages,
             current_step: state.current_step,
-            show_spinner: state.show_spinner,
+            bot_spinner: state.bot_spinner,
             new_bot_message: state.new_bot_message,
             new_user_message: state.new_user_message,
             show_buttons: state.show_buttons,
