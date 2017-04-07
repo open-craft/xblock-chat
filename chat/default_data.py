@@ -37,7 +37,7 @@ DEFAULT_DATA = """- 1:
     - It's all in the README!
 """
 
-BOT_ID = 'bot'
+DEFAULT_BOT_ID = 'bot'
 USER_ID = 'user'
 BOT_MESSAGE_ANIMATION_DELAY = 2500
 USER_MESSAGE_ANIMATION_DELAY = 1000

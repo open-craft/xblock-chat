@@ -236,6 +236,21 @@ yaml_final_steps = """
     messages: This is the final step, no further response available.
 """
 
+yaml_multiple_bots = """
+- step1:
+    messages:
+        - bot-1: I am bot 1.
+        - bot-2: And I am bot 2.
+    responses:
+        - Nice to meet you: step2
+- step2:
+    messages:
+        - bot-1: Nice to meet you too.
+          bot-2: Nice to meet you too.
+    responses:
+        - Please repeat: step2
+"""
+
 
 @ddt
 class TestChat(StudioEditableBaseTest):
@@ -733,6 +748,39 @@ class TestChat(StudioEditableBaseTest):
         bot_message = self.element.find_element_by_css_selector('.messages .message.bot')
         image = bot_message.find_element_by_tag_name('img')
         self.assertEqual(image.get_attribute('src'), 'http://example.com/bot.png')
+
+    def test_multiple_bots(self):
+        bot_image_url_mapping = """
+        bot-1: /static/bot1.jpg
+        bot-2: http://example.com/bot2.jpg
+        """
+        expected_bot1_image_url = 'http://localhost:8081/course/test-course/assets/bot1.jpg'
+        expected_bot2_image_url = 'http://example.com/bot2.jpg'
+        self.configure_block(yaml_multiple_bots, bot_image_url=bot_image_url_mapping)
+        self.element = self.go_to_view("student_view")
+        bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
+        self.assertEqual(len(bot_messages), 2)
+        self.assertEqual(bot_messages[0].text, 'I am bot 1.')
+        image1 = bot_messages[0].find_element_by_tag_name('img')
+        self.assertEqual(image1.get_attribute('src'), expected_bot1_image_url)
+        self.assertEqual(bot_messages[1].text, 'And I am bot 2.')
+        image2 = bot_messages[1].find_element_by_tag_name('img')
+        self.assertEqual(image2.get_attribute('src'), expected_bot2_image_url)
+        # Go to next step, which contains two messages; one of which gets picked randomly.
+        self.click_button('Nice to meet you')
+        self.wait_until_buttons_are_displayed()
+        bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
+        self.assertEqual(len(bot_messages), 3)
+        image3_url = bot_messages[2].find_element_by_tag_name('img').get_attribute('src')
+        self.assertIn(image3_url, [expected_bot1_image_url, expected_bot2_image_url])
+        # Now go back to the same step - this time the other messages should get displayed.
+        self.click_button('Please repeat')
+        self.wait_until_buttons_are_displayed()
+        bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
+        self.assertEqual(len(bot_messages), 4)
+        image4_url = bot_messages[3].find_element_by_tag_name('img').get_attribute('src')
+        self.assertIn(image4_url, [expected_bot1_image_url, expected_bot2_image_url])
+        self.assertNotEqual(image4_url, image3_url)
 
     def test_avatar_border_color(self):
         self.configure_block(yaml_good, avatar_border_color='#00ffff')
