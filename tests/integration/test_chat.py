@@ -57,21 +57,6 @@ yaml_missing_messages = """
         - No thanks: null
 """
 
-yaml_empty_messages = """
-- step1:
-    messages: []
-    responses:
-        - 2: step2
-        - 3: step3
-- step2:
-    messages: Yep, that's correct! Good job.
-- step3:
-    messages: Hmm, no, it's not 3. (It's less.) Would you like to try again?
-    responses:
-        - Yes please: step1
-        - No thanks: null
-"""
-
 yaml_invalid_responses = """
 - step1:
     messages:
@@ -84,6 +69,35 @@ yaml_invalid_responses = """
     responses:
         - Yes please: step1
         - No thanks: null
+"""
+
+yaml_too_many_responses = """
+- step1:
+    messages:
+        - ["What is 1+1?", "What is the sum of 1 and 1?"]
+    responses:
+        - 2: step2
+        - 3: step3
+        - 4: step3
+- step2:
+    messages: Yep, that's correct! Good job.
+- step3:
+    messages: Hmm, no, that is not correct. Would you like to try again?
+    responses:
+        - Yes please: step1
+        - No thanks: null
+"""
+
+yaml_empty_messages = """
+- step1:
+    messages: Hello there!
+    responses:
+        - Hello!: step2
+- step2:
+    messages: []
+    responses:
+        - Hello!?: step1
+        - Bye now!: null
 """
 
 multiple_steps = """
@@ -440,6 +454,35 @@ class TestChat(StudioEditableBaseTest):
             '.messages .bot .message-body p').text
         self.assertIn(bot_message, ["Hi", "How are you?"])
 
+    def test_no_step_messages(self):
+        self.configure_block(yaml_empty_messages)
+        self.element = self.go_to_view("student_view")
+        self.wait_until_buttons_are_displayed()
+        selector = '.messages .bot .message-body p'
+        bot_messages = self.element.find_elements_by_css_selector(selector)
+        self.assertEqual(len(bot_messages), 1)
+        bot_message = bot_messages[0]
+        self.assertEqual(bot_message.text, 'Hello there!')
+        self.click_button('Hello!')
+        self.wait_until_buttons_are_displayed()
+        # No new bot messages are displayed.
+        bot_messages = self.element.find_elements_by_css_selector(selector)
+        self.assertEqual(len(bot_messages), 1)
+        self.assertEqual(bot_messages[0], bot_message)
+        # However new response buttons are available for clicking.
+        self.click_button('Hello!?')
+        self.wait_until_buttons_are_displayed()
+        # We're back to first step, so the initial bot message should repeat.
+        bot_messages = self.element.find_elements_by_css_selector(selector)
+        self.assertEqual(len(bot_messages), 2)
+        self.assertEqual(bot_messages[1].text, 'Hello there!')
+        self.click_button('Hello!')
+        self.wait_until_buttons_are_displayed()
+        # Again no new bot messages.
+        bot_messages = self.element.find_elements_by_css_selector(selector)
+        self.assertEqual(len(bot_messages), 2)
+        self.click_button('Bye now!')
+
     def test_prefer_message_not_displayed(self):
         self.configure_block(multiple_steps)
         self.element = self.go_to_view("student_view")
@@ -528,19 +571,20 @@ class TestChat(StudioEditableBaseTest):
             u"- {No thanks: null} is missing the following attributes: "
             u"messages"
         )
-        # Test a step with its messages list being empty
-        self.configure_block(yaml_empty_messages, expect_success=False)
-        self.expect_error_message(
-            u"The attribute 'messages' has to be a string or a "
-            u"list of strings in step1:\n  messages: []\n  "
-            u"responses:\n  - {2: step2}\n  - {3: step3}."
-        )
         # Test a step with its responses list not containing dictionaries
         self.configure_block(yaml_invalid_responses, expect_success=False)
         self.expect_error_message(
             u"The 'responses' attribute of step1:\n  messages:\n  - ['What is 1+1?', "
             u"'What is the sum of 1 and 1?']\n  responses: [response a, response b] has to "
-            u"be a list of response mappings."
+            u"be a list of response mappings of maximum length 7."
+        )
+        # Test a step with too many respones (controlled by MAX_USER_RESPONSES variable)
+        with patch('chat.chat.MAX_USER_RESPONSES', 2):
+            self.configure_block(yaml_too_many_responses, expect_success=False)
+            self.expect_error_message(
+                u"The 'responses' attribute of step1:\n  messages:\n  - ['What is 1+1?', "
+                u"'What is the sum of 1 and 1?']\n  responses:\n  - {2: step2}\n  - {3: step3}\n  "
+                u"- {4: step3} has to be a list of response mappings of maximum length 2."
         )
 
     def test_image_url_validation(self):

@@ -28,7 +28,7 @@ from xblockutils.studio_editable import StudioEditableXBlockMixin
 
 from .default_data import BOT_ID, BOT_MESSAGE_ANIMATION_DELAY, DEFAULT_DATA, USER_ID, USER_MESSAGE_ANIMATION_DELAY
 from .default_data import BUTTONS_ENTERING_TRANSITION_DURATION, BUTTONS_LEAVING_TRANSITION_DURATION, SCROLL_DELAY
-from .default_data import NAME_PLACEHOLDER, TYPING_DELAY_PER_CHARACTER
+from .default_data import NAME_PLACEHOLDER, TYPING_DELAY_PER_CHARACTER, MAX_USER_RESPONSES
 from .utils import _
 
 try:
@@ -403,8 +403,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
     def _has_valid_messages(messages):
         """Checks that messages is a string or a list of strings."""
         return (
-            isinstance(messages, basestring) or
-            (isinstance(messages, list) and messages)
+            isinstance(messages, basestring) or isinstance(messages, list)
         )
 
     def _validate_responses(self, step, responses, add_error):
@@ -424,22 +423,22 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         if not self._has_valid_responses(responses):
             msg = (
                 u"The 'responses' attribute of {step} has to be a list "
-                u"of response mappings."
+                u"of response mappings of maximum length {max_length}."
             )
             add_error(
-                msg.format(step=self._as_yaml(step))
+                msg.format(step=self._as_yaml(step), max_length=MAX_USER_RESPONSES)
             )
             return
 
     def _has_valid_responses(self, responses):
         """
-        Checks if 'responses' is a list of up to three response
+        Checks if 'responses' is a list of up to MAX_USER_RESPONSES response
         dictionaries.
 
         Then checks if each response has a single key.
         """
 
-        if not (isinstance(responses, list) and len(responses) <= 3):
+        if not (isinstance(responses, list) and len(responses) <= MAX_USER_RESPONSES):
             return False
         return all(
             self._is_valid_yaml_response(response) for response in responses
