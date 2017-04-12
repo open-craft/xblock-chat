@@ -292,7 +292,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
     def _is_final_step(self, step):
         """Returns true if current step doesn't exist or has no responses (is final step)."""
         steps_dict = self._steps_as_dict
-        # Step with this ID does not exists, which means the chat is complete.
+        # Step with this ID does not exist, which means the chat is complete.
         if step not in steps_dict:
             return True
         # Step exists, but has no user responses available, which means this is the final step.
@@ -593,3 +593,10 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             except ImportError:
                 pass
         return url
+
+    @XBlock.handler
+    def chat_complete(self, request, suffix=""):
+        """This is called from the front end when the learner has completed the chat."""
+        # Does nothing at the moment; this HTTP request is listened for by some mobile apps
+        # to trigger events after the chat is completed.
+        return webob.Response()
