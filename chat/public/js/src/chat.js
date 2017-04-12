@@ -488,6 +488,24 @@ function ChatXBlock(runtime, element, init_data) {
     };
 
     /**
+     * isFinalStep: returns true if current step doesn't exist or has no responses.
+       This is the JS equivalent of the _is_final_step method of the XBlock.
+     */
+    var isFinalStep = function(step) {
+        var steps_dict = init_data["steps"];
+        // Step with this ID does not exist, which means the chat is complete.
+        if (!(step in steps_dict)) {
+            return true;
+        }
+        // Step exists, but has no user responses available, which means this is the final step.
+        if (steps_dict[step].responses.length == 0) {
+            return true;
+        }
+        // Step exists and has responses for the user to choose from, so this is not the final step.
+        return false;
+    };
+
+    /**
      * saveState: stores state to localStorage and sends it to the server.
      */
     var saveState = function() {
@@ -503,6 +521,13 @@ function ChatXBlock(runtime, element, init_data) {
             url: runtime.handlerUrl(element, "submit_response"),
             data: serialized_state
         });
+        // If it's the final step ping the chat_complete handler
+        if (isFinalStep(state.current_step)) {
+            $.ajax({
+                type: 'GET',
+                url: runtime.handlerUrl(element, "chat_complete")
+            });
+        }
     };
 
     /**
