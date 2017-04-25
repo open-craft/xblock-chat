@@ -901,6 +901,12 @@ class TestChat(StudioEditableBaseTest):
         self.click_button('OK')
         self.wait_for_ajax()
         self.assertTrue(mock_handler.called)
+        # The handler should be called again if we reload the page.
+        mock_handler.reset_mock()
+        self.assertFalse(mock_handler.called)
+        self.element = self.go_to_view('student_view')
+        self.wait_for_ajax()
+        self.assertTrue(mock_handler.called)
 
     @patch('chat.chat.ChatXBlock.chat_complete')
     def test_ping_handler_when_chat_is_complete_with_step_without_responses(self, mock_handler):
@@ -910,5 +916,11 @@ class TestChat(StudioEditableBaseTest):
         self.click_button('Response that points to existing step with no further responses')
         self.assertFalse(mock_handler.called)
         self.click_button('OK')
+        self.wait_for_ajax()
+        self.assertTrue(mock_handler.called)
+        # The handler should be called again if we reload the page.
+        mock_handler.reset_mock()
+        self.assertFalse(mock_handler.called)
+        self.element = self.go_to_view("student_view")
         self.wait_for_ajax()
         self.assertTrue(mock_handler.called)
