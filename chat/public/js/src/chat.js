@@ -348,7 +348,10 @@ function ChatXBlock(runtime, element, init_data) {
         state.image_dimensions = {};
         applyState(state);
         state.scroll_delay = init_data["scroll_delay"];
-        return state
+        // Some mobile apps expect the chat_complete handler to be invoked
+        // every time when loading the block if block is in complete state.
+        pingHandlerIfComplete(state);
+        return state;
     };
 
     /**
@@ -506,6 +509,18 @@ function ChatXBlock(runtime, element, init_data) {
     };
 
     /**
+    * Sends a GET request to the chat_complete handler if we are on final step.
+    */
+    var pingHandlerIfComplete = function(state) {
+        if (isFinalStep(state.current_step)) {
+            $.ajax({
+                type: 'GET',
+                url: runtime.handlerUrl(element, "chat_complete")
+            });
+        }
+    };
+
+    /**
      * saveState: stores state to localStorage and sends it to the server.
      */
     var saveState = function() {
@@ -522,12 +537,7 @@ function ChatXBlock(runtime, element, init_data) {
             data: serialized_state
         });
         // If it's the final step ping the chat_complete handler
-        if (isFinalStep(state.current_step)) {
-            $.ajax({
-                type: 'GET',
-                url: runtime.handlerUrl(element, "chat_complete")
-            });
-        }
+        pingHandlerIfComplete(state);
     };
 
     /**
