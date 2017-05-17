@@ -218,6 +218,14 @@ function ChatTemplates(init_data) {
         }
     };
 
+    var actionsTemplate = function() {
+        var children = [];
+        if (init_data['enable_restart_button']) {
+            children.push(h('button.restart-button', 'Restart'));
+        }
+        return h('div.actions', children);
+    };
+
     var spacerTemplate = function() {
         return (
             h('div.spacer', {style: {height: SPACER_HEIGHT + 'px'}})
@@ -236,6 +244,7 @@ function ChatTemplates(init_data) {
             } else {
                 children.push(buttonsTemplate(ctx));
             }
+            children.push(actionsTemplate());
         }
         children.push(spacerTemplate());
         if (ctx.image_overlay) {
@@ -306,6 +315,20 @@ function ChatXBlock(runtime, element, init_data) {
     };
 
     /**
+     * clearLocalStorage: removes any state that this block stored to local storage.
+     */
+    var clearLocalStorage = function() {
+        var key = localStorageKey();
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {
+            // Accessing local storage will fail if localStorage is not available,
+            // or if browser settings forbid access to localStorage.
+            // We can safely ignore that error.
+        }
+    };
+
+    /**
      * pause: delays execution with a timeout
      */
     var pause = function(timeout) {
@@ -327,6 +350,38 @@ function ChatXBlock(runtime, element, init_data) {
                 overflow: 'hidden'
             });
         }
+        $element.on('click', '.response-button', submitResponse);
+        $element.on('click', '.restart-button', restartChat);
+        $element.on('click', '.message-body img', showImageOverlay);
+        $element.on('click', '.image-overlay', closeImageOverlay);
+        var init_state = getStateFromLocalStorage() || init_data["user_state"];
+        var state = initializeAndApplyState(init_state);
+        // Try to load state from local storage and fall back to init_data.
+        // Some mobile apps expect the chat_complete handler to be invoked
+        // every time when loading the block if block is in complete state.
+        pingHandlerIfComplete(state);
+        return state;
+    };
+
+    /**
+     * initializeAndApplyState: given initial state object, sets default values and applies the state.
+     */
+    var initializeAndApplyState = function(state) {
+        state.current_step = initialStep(state);
+        state = addBotMessages(state);
+        state.scroll_delay = 0;
+        state.image_overlay = null;
+        state.image_dimensions = {};
+        preloadImages();
+        applyState(state);
+        state.scroll_delay = init_data["scroll_delay"];
+        return state;
+    };
+
+    /**
+     * preloadImages: preload all images used in this block and store their dimensions.
+     */
+    var preloadImages = function() {
         loadImage(init_data["user_image_url"]);
         Object.keys(init_data["bot_image_urls"]).forEach(function(bot_id) {
             loadImage(init_data["bot_image_urls"][bot_id]);
@@ -336,22 +391,6 @@ function ChatXBlock(runtime, element, init_data) {
                 loadImage(init_data["steps"][step_id].image_url);
             }
         });
-        $element.on('click', '.response-button', submitResponse);
-        $element.on('click', '.message-body img', showImageOverlay);
-        $element.on('click', '.image-overlay', closeImageOverlay);
-        // Try to load state from local storage and fall back to init_data.
-        var state = getStateFromLocalStorage() || init_data["user_state"];
-        state.current_step = initialStep(state);
-        state = addBotMessages(state);
-        state.scroll_delay = 0;
-        state.image_overlay = null;
-        state.image_dimensions = {};
-        applyState(state);
-        state.scroll_delay = init_data["scroll_delay"];
-        // Some mobile apps expect the chat_complete handler to be invoked
-        // every time when loading the block if block is in complete state.
-        pingHandlerIfComplete(state);
-        return state;
     };
 
     /**
@@ -538,6 +577,22 @@ function ChatXBlock(runtime, element, init_data) {
         });
         // If it's the final step ping the chat_complete handler
         pingHandlerIfComplete(state);
+    };
+
+    /**
+     * restartChat: reset chat state and start from beginning.
+     */
+    var restartChat = function() {
+        clearLocalStorage();
+        $.ajax({
+            type: 'POST',
+            url: runtime.handlerUrl(element, 'reset'),
+            data: '{}'
+        });
+        state = initializeAndApplyState({
+            messages: [],
+            current_step: null
+        });
     };
 
     /**
