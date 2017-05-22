@@ -158,12 +158,39 @@ body.view-in-course .course-wrapper.chromeless {
     color: #fff;
     border: none;
     box-shadow: none;
-    border-radius: 0;
     padding: 10px;
     font-weight: normal;
     text-shadow: none;
     outline: 0;
     border-radius: 10px;
+}
+
+.chat-block .actions {
+    text-align: right;
+    margin-top: 20px;
+}
+
+.chat-block .actions:empty {
+    margin-top: 0;
+}
+
+.chat-block .actions button,
+.chat-block .actions button:hover,
+.chat-block .actions button:active,
+.chat-block .actions button:focus {
+    color: #0075b4;
+    background: none;
+    border: none;
+    box-shadow: none;
+    font-family: Arial;
+    font-weight: normal;
+    font-size: 13px;
+}
+
+.chat-block .actions .restart-button::before {
+    content: "\f021";
+    font-family: FontAwesome;
+    padding-right: 5px;
 }
 
 .chat-block .image-overlay {

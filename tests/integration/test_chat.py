@@ -3,7 +3,7 @@ import pkg_resources
 import yaml
 import re
 
-from ddt import ddt
+from ddt import ddt, data
 from mock import ANY, patch
 
 from django.test.client import Client
@@ -375,7 +375,10 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, default_response_labels)
 
-    def configure_block(self, yaml, expect_success=True, bot_image_url=None, avatar_border_color=None):
+    def configure_block(
+            self, yaml, expect_success=True, bot_image_url=None, avatar_border_color=None,
+            enable_restart_button=None
+    ):
         self.load_scenario("xml/chat_defaults.xml")
         self.go_to_view("studio_view")
         self.fix_js_environment()
@@ -390,6 +393,11 @@ class TestChat(StudioEditableBaseTest):
             control = self.get_element_for_field('avatar_border_color')
             control.clear()
             control.send_keys(avatar_border_color)
+        if enable_restart_button is not None:
+            control = self.get_element_for_field('enable_restart_button')
+            value = '1' if enable_restart_button else '0'
+            option = control.find_element_by_css_selector('option[value="{}"]'.format(value))
+            option.click()
         self.click_save(expect_success)
 
     def test_steps_has_to_be_a_yaml_list(self):
@@ -870,6 +878,43 @@ class TestChat(StudioEditableBaseTest):
             self.browser.execute_script('localStorage.clear()')
             self.element = self.go_to_view('student_view')
             self.assertFalse(is_step2_visible())
+
+    @data(True, False)
+    def test_restart_button_setting_disabled(self, enable_restart_button):
+        self.configure_block(yaml_good, enable_restart_button=enable_restart_button)
+        self.element = self.go_to_view("student_view")
+        restart_button = self.element.find_elements_by_css_selector('button.restart-button')
+        if enable_restart_button:
+            self.assertEqual(len(restart_button), 1)
+        else:
+            self.assertEqual(len(restart_button), 0)
+
+    def test_restart_button(self):
+        self.configure_block(yaml_good, enable_restart_button=True)
+        self.element = self.go_to_view("student_view")
+        # Select a response to trigger saving the state.
+        self.click_button('3')
+        # Wait for the user state to store on the server.
+        self.wait_for_ajax()
+        bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
+        # We should see two bot messages after responding to the first message.
+        self.assertEqual(len(bot_messages), 2)
+        # Message history persists, so after reloading the page we should still see two bot messages.
+        self.element = self.go_to_view('student_view')
+        self.wait_for_ajax()
+        bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
+        self.assertEqual(len(bot_messages), 2)
+        # Now click the restart button. This should clear the history and remove the second bot message.
+        restart_button = self.element.find_element_by_css_selector('button.restart-button')
+        restart_button.click()
+        bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
+        self.assertEqual(len(bot_messages), 1)
+        # Now reload the page
+        self.element = self.go_to_view('student_view')
+        self.wait_for_ajax()
+        # We should still only see the first bot message.
+        bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
+        self.assertEqual(len(bot_messages), 1)
 
     @patch('workbench.runtime.WorkbenchRuntime.publish')
     def test_complete_event_emitted_with_non_existing_step(self, mock_publish):

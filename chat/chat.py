@@ -20,7 +20,7 @@ from django.core.validators import URLValidator
 from django.http import Http404
 
 from xblock.core import XBlock
-from xblock.fields import List, Scope, String
+from xblock.fields import List, Scope, String, Boolean
 from xblock.fragment import Fragment
 from xblock.validation import ValidationMessage
 from xblockutils.resources import ResourceLoader
@@ -94,6 +94,12 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         scope=Scope.content,
     )
 
+    enable_restart_button = Boolean(
+        display_name=_("Enable restart button"),
+        default=False,
+        scope=Scope.content,
+    )
+
     messages = List(
         help=_(
             "List of dictionaries representing the messages exchanged "
@@ -117,6 +123,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         "steps",
         "bot_image_url",
         "avatar_border_color",
+        "enable_restart_button",
     )
 
     @XBlock.supports("multi_device")  # Mark as mobile-friendly
@@ -224,6 +231,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             "buttons_leaving_transition_duration": BUTTONS_LEAVING_TRANSITION_DURATION,
             "scroll_delay": SCROLL_DELAY,
             "avatar_border_color": self.avatar_border_color or None,
+            "enable_restart_button": self.enable_restart_button,
             "typing_delay_per_character": TYPING_DELAY_PER_CHARACTER,
         }
 
@@ -311,6 +319,12 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         if self._is_final_step(self.current_step):
             data = {'final_step': self.current_step}
             self.runtime.publish(self, 'xblock.chat.complete', data)
+
+    @XBlock.json_handler
+    def reset(self, data, suffix=''):
+        """Resets chat state"""
+        self.messages = []
+        self.current_step = None
 
     @XBlock.handler
     def serve_audio(self, request, wav_name):
