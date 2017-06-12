@@ -32,9 +32,10 @@ DEFAULT_DATA = """- 1:
     - Yes, please!: 6
     - 'No': 2
 - 6:
+    notice-type: correct
+    notice-text: Yay! Learning new stuff is awesome.
     messages:
-    - It's easy!
-    - It's all in the README!
+    - It's easy! It's all in the README.
 """
 
 DEFAULT_BOT_ID = 'bot'

@@ -251,6 +251,12 @@ yaml_multiple_bots = """
         - Please repeat: step2
 """
 
+yaml_notice = """
+- 1:
+    notice-type: {notice_type}
+    notice-text: {notice_text}
+    messages: Only got this step. Did you see the notice?
+"""
 
 @ddt
 class TestChat(StudioEditableBaseTest):
@@ -377,7 +383,7 @@ class TestChat(StudioEditableBaseTest):
 
     def configure_block(
             self, yaml, expect_success=True, bot_image_url=None, avatar_border_color=None,
-            enable_restart_button=None
+            enable_restart_button=None, subject=None
     ):
         self.load_scenario("xml/chat_defaults.xml")
         self.go_to_view("studio_view")
@@ -398,6 +404,11 @@ class TestChat(StudioEditableBaseTest):
             value = '1' if enable_restart_button else '0'
             option = control.find_element_by_css_selector('option[value="{}"]'.format(value))
             option.click()
+        if subject is not None:
+            control = self.get_element_for_field('subject')
+            control.clear()
+            control.send_keys(subject)
+
         self.click_save(expect_success)
 
     def test_steps_has_to_be_a_yaml_list(self):
@@ -915,6 +926,31 @@ class TestChat(StudioEditableBaseTest):
         # We should still only see the first bot message.
         bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
         self.assertEqual(len(bot_messages), 1)
+
+    @data("", "This is a test subject")
+    def test_chat_subject(self, chat_subject):
+        self.configure_block(yaml_good, subject=chat_subject)
+        self.element = self.go_to_view("student_view")
+        subject_element = self.element.find_elements_by_css_selector('div.subject')
+
+        if chat_subject:
+            self.assertEqual(len(subject_element), 1)
+            self.assertTrue(chat_subject in subject_element[0].text)
+        else:
+            self.assertEqual(len(subject_element), 0)
+
+    @data("incorrect", "correct", "warning")
+    def test_chat_notice(self, notice_type):
+        notice_text = 'Yay! Notices are working.'
+        notice = yaml_notice.format(notice_type=notice_type, notice_text=notice_text)
+        selector = 'div.notice.{}'.format(notice_type)
+
+        self.configure_block(notice)
+        self.element = self.go_to_view("student_view")
+        notice_element = self.element.find_elements_by_css_selector(selector)
+
+        self.assertEqual(len(notice_element), 1)
+        self.assertTrue(notice_text in notice_element[0].text)
 
     @patch('workbench.runtime.WorkbenchRuntime.publish')
     def test_complete_event_emitted_with_non_existing_step(self, mock_publish):

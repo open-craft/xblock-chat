@@ -114,6 +114,24 @@ It is possible to add an optional image (with alternative text) to a step.
 - ...
 ```
 
+### Notices in Bot Messages
+
+It is possible to display a notice to the user, on any given step. This is
+useful when, for example, you want to give feedback to an action.
+
+```yaml
+- step1:
+    notice-type: correct
+    notice-text: Ding, Ding! We have a winner!
+    messages: Nice shot.
+```
+
+`notice-type` is the CSS class associated with the notice. You can leverage
+this to style the notices any way you like.
+
+Currently we have builtin styles for two notice types: `correct` and
+`incorrect`. This will add corresponding badges to the displayed notices.
+
 ### Bot Message Randomization
 
 If a step contains a nested list of messages, a single message from the nested

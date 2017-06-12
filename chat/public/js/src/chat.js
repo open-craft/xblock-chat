@@ -24,6 +24,24 @@ function ChatTemplates(init_data) {
         );
     };
 
+    var noticeTemplate = function(step) {
+      var tag = 'div.notice';
+
+      if (step.notice_type) {
+        tag = tag.concat('.' + step.notice_type);
+      }
+
+      return h(tag, h('p', step.notice_text));
+    };
+
+    var subjectTemplate = function(ctx) {
+      if (ctx.subject) {
+        return h('div.subject', h('p', ctx.subject));
+      } else {
+        return null;
+      }
+    };
+
     // Position the image to make it cover the max possible area of the window while
     // maintaining the aspect-ratio and keeping the entire image visible.
     // If image is landscape, but window orientation is vertical (or the other way around),
@@ -106,10 +124,19 @@ function ChatTemplates(init_data) {
         if (step && step.image_url) {
             children = [imageTemplate(step), message.message];
         }
+
         if (extra_css_class) {
             tag = tag.concat('.' + extra_css_class);
         }
-        return botMessageContentTemplate(message.from, tag, children);
+        var messageContent = botMessageContentTemplate(
+          message.from, tag, children
+        );
+
+        if (step && step.notice_text) {
+          return [noticeTemplate(step), messageContent];
+        } else {
+          return messageContent;
+        }
     };
 
     var spinnerTemplate = function(bot_id) {
@@ -234,6 +261,7 @@ function ChatTemplates(init_data) {
 
     var mainTemplate = function(ctx) {
         var children = [
+            subjectTemplate(ctx),
             messagesTemplate(ctx)
         ];
         if (ctx.show_buttons) {
@@ -375,6 +403,7 @@ function ChatXBlock(runtime, element, init_data) {
         preloadImages();
         applyState(state);
         state.scroll_delay = init_data["scroll_delay"];
+        state.subject = init_data["subject"];
         return state;
     };
 
@@ -840,7 +869,8 @@ function ChatXBlock(runtime, element, init_data) {
             show_buttons_entering: state.show_buttons_entering,
             show_buttons_leaving: state.show_buttons_leaving,
             image_overlay: state.image_overlay,
-            image_dimensions: state.image_dimensions
+            image_dimensions: state.image_dimensions,
+            subject: state.subject
         };
         return renderView(context);
     };

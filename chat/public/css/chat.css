@@ -30,6 +30,44 @@ body.view-in-course .course-wrapper.chromeless {
     height: 100vh;
 }
 
+.chat-block .subject {
+  width: 100%;
+}
+
+.chat-block .subject p {
+  background-color: #fff;
+  color: #000;
+  padding: 10px 15px 20px 15px;
+}
+
+.chat-block .notice {
+  position: relative;
+  width: 100%;
+  margin: 15px auto;
+}
+
+.chat-block .notice::before {
+  font-size: 25px;
+  font-family: FontAwesome;
+  position: absolute;
+  top: 50%;
+  transform: translate(0, -50%);
+  left: 10px;
+}
+
+.chat-block .notice.correct::before {
+  content: "\f058";
+}
+
+.chat-block .notice.incorrect::before {
+  content: "\f057";
+}
+
+.chat-block .notice p {
+  padding: 20px 15px 20px 40px;
+  background: #f0f0f0;
+}
+
 .chat-block .messages {
     padding: 30px 10px 60px 10px;
     box-sizing: border-box;
