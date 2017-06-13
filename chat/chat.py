@@ -57,6 +57,13 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         scope=Scope.content,
     )
 
+    subject = String(
+        display_name=_("Chat subject"),
+        help=_("Subject being discussed in the chat"),
+        default="",
+        scope=Scope.content,
+    )
+
     steps = String(
         display_name=_("Steps"),
         help=_(
@@ -120,6 +127,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
 
     editable_fields = (
         "display_name",
+        "subject",
         "steps",
         "bot_image_url",
         "avatar_border_color",
@@ -230,6 +238,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             "buttons_entering_transition_duration": BUTTONS_ENTERING_TRANSITION_DURATION,
             "buttons_leaving_transition_duration": BUTTONS_LEAVING_TRANSITION_DURATION,
             "scroll_delay": SCROLL_DELAY,
+            "subject": self.subject,
             "avatar_border_color": self.avatar_border_color or None,
             "enable_restart_button": self.enable_restart_button,
             "typing_delay_per_character": TYPING_DELAY_PER_CHARACTER,
@@ -515,6 +524,8 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             "messages": messages,
             "image_url": content.get("image-url"),
             "image_alt": content.get("image-alt"),
+            "notice_type": content.get("notice-type"),
+            "notice_text": content.get("notice-text"),
             "responses": self._normalize_responses(content.get("responses", []))
         }
 
