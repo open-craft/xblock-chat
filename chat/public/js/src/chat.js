@@ -3,9 +3,6 @@
 function ChatTemplates(init_data) {
     "use strict";
 
-    // A spacer div at the bottom of the screen is required on the iOS app to account for the prev/next toolbar.
-    var SPACER_HEIGHT = 44;
-
     var h = virtualDom.h;
 
     var renderCollection = function(template, collection, ctx) {
@@ -80,7 +77,7 @@ function ChatTemplates(init_data) {
         var img_style = {};
         if (img_dims) {
             var win_width = $(window).width();
-            var win_height = $(window).height() - SPACER_HEIGHT;
+            var win_height = $(window).height() - ctx.spacer_height;
             img_style = optimalOverlayImageStyle(img_dims.width, img_dims.height, win_width, win_height);
         }
         return (
@@ -253,9 +250,9 @@ function ChatTemplates(init_data) {
         return h('div.actions', children);
     };
 
-    var spacerTemplate = function() {
+    var spacerTemplate = function(ctx) {
         return (
-            h('div.spacer', {style: {height: SPACER_HEIGHT + 'px'}})
+            h('div.spacer', {style: {height: ctx.spacer_height + 'px'}})
         );
     };
 
@@ -274,7 +271,7 @@ function ChatTemplates(init_data) {
             }
             children.push(actionsTemplate());
         }
-        children.push(spacerTemplate());
+        children.push(spacerTemplate(ctx));
         if (ctx.image_overlay) {
             children.push(imageOverlayTemplate(ctx));
         }
@@ -286,6 +283,10 @@ function ChatTemplates(init_data) {
 
 function ChatXBlock(runtime, element, init_data) {
     "use strict";
+
+    // A spacer div at the bottom of the screen is required on the iOS app to account for the prev/next toolbar.
+    // It's set to a value other than 0 in the init function if we detect we are on mobile.
+    var spacer_height = 0;
 
     var renderView = ChatTemplates(init_data);
 
@@ -373,6 +374,9 @@ function ChatXBlock(runtime, element, init_data) {
     var init = function() {
         // prevent rubber band effect (overscroll) in iOS app
         if ($('.course-wrapper.chromeless').length) {
+            // On iOS, some padding is required at the bottom of the screen.
+            spacer_height = 44;
+
             $('html, body').css({
                 position: 'fixed',
                 overflow: 'hidden'
@@ -870,7 +874,8 @@ function ChatXBlock(runtime, element, init_data) {
             show_buttons_leaving: state.show_buttons_leaving,
             image_overlay: state.image_overlay,
             image_dimensions: state.image_dimensions,
-            subject: state.subject
+            subject: state.subject,
+            spacer_height: spacer_height
         };
         return renderView(context);
     };
