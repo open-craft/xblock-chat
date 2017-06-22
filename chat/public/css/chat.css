@@ -71,7 +71,7 @@ body.view-in-course .course-wrapper.chromeless {
 .chat-block .messages {
     padding: 30px 10px 60px 10px;
     box-sizing: border-box;
-    overflow: auto;
+    overflow-y: auto;
     flex-grow: 5000;
 }
 
