@@ -960,7 +960,7 @@ class TestChat(StudioEditableBaseTest):
         self.assertFalse(mock_publish.called)
         self.click_button('OK')
         self.wait_for_ajax()
-        mock_publish.assert_called_with(ANY, 'xblock.chat.complete', {'final_step': 'FINAL_STEP_MARKER'})
+        mock_publish.assert_any_call(ANY, 'xblock.chat.complete', {'final_step': 'FINAL_STEP_MARKER'})
 
     @patch('workbench.runtime.WorkbenchRuntime.publish')
     def test_complete_event_emitted_with_step_without_responses(self, mock_publish):
@@ -970,7 +970,27 @@ class TestChat(StudioEditableBaseTest):
         self.assertFalse(mock_publish.called)
         self.click_button('OK')
         self.wait_for_ajax()
-        mock_publish.assert_called_with(ANY, 'xblock.chat.complete', {'final_step': '4'})
+        mock_publish.assert_any_call(ANY, 'xblock.chat.complete', {'final_step': '4'})
+
+    @patch('workbench.runtime.WorkbenchRuntime.publish')
+    def test_progress_event_emitted_with_non_existing_step(self, mock_publish):
+        self.configure_block(yaml_final_steps)
+        self.element = self.go_to_view('student_view')
+        self.click_button('Response that points to non-existing step')
+        self.assertFalse(mock_publish.called)
+        self.click_button('OK')
+        self.wait_for_ajax()
+        mock_publish.assert_any_call(ANY, 'progress', {})
+
+    @patch('workbench.runtime.WorkbenchRuntime.publish')
+    def test_progress_event_emitted_with_step_without_responses(self, mock_publish):
+        self.configure_block(yaml_final_steps)
+        self.element = self.go_to_view('student_view')
+        self.click_button('Response that points to existing step with no further responses')
+        self.assertFalse(mock_publish.called)
+        self.click_button('OK')
+        self.wait_for_ajax()
+        mock_publish.assert_any_call(ANY, 'progress', {})
 
     @patch('chat.chat.ChatXBlock.chat_complete')
     def test_ping_handler_when_chat_is_complete_with_non_existing_step(self, mock_handler):

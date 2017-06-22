@@ -328,6 +328,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         if self._is_final_step(self.current_step):
             data = {'final_step': self.current_step}
             self.runtime.publish(self, 'xblock.chat.complete', data)
+            self.runtime.publish(self, 'progress', {})
 
     @XBlock.json_handler
     def reset(self, data, suffix=''):
