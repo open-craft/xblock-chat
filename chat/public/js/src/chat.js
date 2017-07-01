@@ -364,9 +364,9 @@ function ChatXBlock(runtime, element, init_data) {
      * pause: delays execution with a timeout
      */
     var pause = function(timeout) {
-        return new Promise(function(resolve, reject) {
-            setTimeout(resolve, timeout);
-        });
+        var promise = $.Deferred();
+        setTimeout(promise.resolve, timeout);
+        return promise;
     };
 
     /**
@@ -649,9 +649,8 @@ function ChatXBlock(runtime, element, init_data) {
         var promise;
         playSound(response_sound);
         playSoundInMutedLoop(bot_sound);
-        promise = new Promise(function(resolve, reject) {
-            resolve();
-        }).then(hideButtons)
+        promise = $.Deferred();
+        promise.then(hideButtons)
           .then(waitForButtonsHiding)
           .then(createUserMessage(event))
           .then(waitUserMessageAnimation)
@@ -659,6 +658,7 @@ function ChatXBlock(runtime, element, init_data) {
           .then(waitUserMessageAnimation)
           .then(saveState)
           .then(addNewBotMessages(state));
+        promise.resolve();
     };
 
     var showImageOverlay = function(event) {
@@ -843,9 +843,7 @@ function ChatXBlock(runtime, element, init_data) {
             return oldState;
         }
         if (step_messages.length) {
-            promise = new Promise(function(resolve, reject) {
-                resolve();
-            });
+            var promise = $.Deferred();
             step_messages.reduce(function(acc_promise, step_message, index, array) {
                 var message = step_message.message;
                 var bot_id = step_message.bot_id;
@@ -857,6 +855,7 @@ function ChatXBlock(runtime, element, init_data) {
                     .then(waitBotMessageAnimation)
                     .then(addBotMessageToHistory(oldState, is_last_message_in_step));
             }, promise);
+            promise.resolve();
         } else {
             showButtons(oldState);
         }
