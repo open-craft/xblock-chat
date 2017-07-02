@@ -407,10 +407,10 @@ function ChatXBlock(runtime, element, init_data) {
         state.scroll_delay = 0;
         state.image_overlay = null;
         state.image_dimensions = {};
+        state.subject = init_data["subject"];
         preloadImages();
         applyState(state);
         state.scroll_delay = init_data["scroll_delay"];
-        state.subject = init_data["subject"];
         return state;
     };
 
