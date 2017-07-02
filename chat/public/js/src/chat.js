@@ -195,6 +195,10 @@ function ChatTemplates(init_data) {
             'data-message': JSON.stringify(item.message),
             'data-step_id': JSON.stringify(item.step)
         };
+        var button_props = {};
+        if (ctx.show_buttons_leaving) {
+            button_props.disabled = true;
+        }
         return (
             h(
                 'div.response-button',
@@ -204,6 +208,7 @@ function ChatTemplates(init_data) {
                 [
                     h(
                         'button',
+                        button_props,
                         item.message
                     )
                 ]
@@ -211,17 +216,18 @@ function ChatTemplates(init_data) {
         );
     };
 
-    var buttonsTemplate = function(ctx, extra_css_class, transition_duration) {
+    var buttonsTemplate = function(ctx) {
         var tag = 'div.buttons';
-        if (extra_css_class) {
-            tag = tag.concat('.' + extra_css_class);
+        if (ctx.show_buttons_entering) {
+            tag += '.entering';
+        } else if (ctx.show_buttons_leaving) {
+            tag += '.leaving';
         }
         var attributes = {};
-        if (transition_duration) {
-            attributes = {
-                style: {
-                    transition: 'max-height '+ transition_duration + 'ms linear'
-                }
+        if (ctx.show_buttons_entering || ctx.show_buttons_leaving) {
+            var transition_duration = init_data["buttons_entering_transition_duration"];
+            attributes.style = {
+                transition: 'max-height '+ transition_duration + 'ms linear'
             };
         }
         var step = ctx.current_step && init_data["steps"][ctx.current_step];
@@ -261,16 +267,7 @@ function ChatTemplates(init_data) {
             messagesTemplate(ctx)
         ];
         if (ctx.show_buttons) {
-            var extra_class = null;
-            var transition_duration = init_data["buttons_entering_transition_duration"];
-            if (ctx.show_buttons_entering) {
-                extra_class = 'entering';
-            } else if (ctx.show_buttons_leaving) {
-                extra_class = 'leaving';
-            } else {
-                transition_duration = null;
-            }
-            main_area_content.push(buttonsTemplate(ctx, extra_class, transition_duration));
+            main_area_content.push(buttonsTemplate(ctx));
         }
         var children = [
             subjectTemplate(ctx),
