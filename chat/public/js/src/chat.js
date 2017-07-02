@@ -25,18 +25,18 @@ function ChatTemplates(init_data) {
       var tag = 'div.notice';
 
       if (step.notice_type) {
-        tag = tag.concat('.' + step.notice_type);
+          tag = tag.concat('.' + step.notice_type);
       }
 
       return h(tag, h('p', step.notice_text));
     };
 
     var subjectTemplate = function(ctx) {
-      if (ctx.subject) {
-        return h('div.subject', h('p', ctx.subject));
-      } else {
-        return null;
-      }
+        if (ctx.subject) {
+            return h('div.subject', h('p', ctx.subject));
+        } else {
+            return null;
+        }
     };
 
     // Position the image to make it cover the max possible area of the window while
@@ -126,13 +126,13 @@ function ChatTemplates(init_data) {
             tag = tag.concat('.' + extra_css_class);
         }
         var messageContent = botMessageContentTemplate(
-          message.from, tag, children
+            message.from, tag, children
         );
 
         if (step && step.notice_text) {
-          return [noticeTemplate(step), messageContent];
+            return [noticeTemplate(step), messageContent];
         } else {
-          return messageContent;
+            return messageContent;
         }
     };
 
