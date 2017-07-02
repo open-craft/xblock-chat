@@ -257,21 +257,27 @@ function ChatTemplates(init_data) {
     };
 
     var mainTemplate = function(ctx) {
-        var children = [
-            subjectTemplate(ctx),
+        var main_area_content = [
             messagesTemplate(ctx)
         ];
         if (ctx.show_buttons) {
+            var extra_class = null;
+            var transition_duration = init_data["buttons_entering_transition_duration"];
             if (ctx.show_buttons_entering) {
-                children.push(buttonsTemplate(ctx, 'entering', init_data["buttons_entering_transition_duration"]));
+                extra_class = 'entering';
             } else if (ctx.show_buttons_leaving) {
-                children.push(buttonsTemplate(ctx, 'leaving', init_data["buttons_leaving_transition_duration"]));
+                extra_class = 'leaving';
             } else {
-                children.push(buttonsTemplate(ctx));
+                transition_duration = null;
             }
-            children.push(actionsTemplate());
+            main_area_content.push(buttonsTemplate(ctx, extra_class, transition_duration));
         }
-        children.push(spacerTemplate(ctx));
+        var children = [
+            subjectTemplate(ctx),
+            h('div.main-area', main_area_content),
+            actionsTemplate(),
+            spacerTemplate(ctx)
+        ];
         if (ctx.image_overlay) {
             children.push(imageOverlayTemplate(ctx));
         }
@@ -690,12 +696,13 @@ function ChatXBlock(runtime, element, init_data) {
      * if there are response buttons and the bot sound wasn't the last played
      */
     var animate = function(state) {
-        var $messages = $root.find('.messages');
+        var $container = $root.find('.main-area');
+        var scroll_top = $container.prop('scrollHeight');
         if (!state.scroll_delay) {
-            $messages.scrollTop($messages.prop("scrollHeight"));
+            $container.scrollTop(scroll_top);
         } else if (state.bot_spinner || (state.show_buttons && !state.show_buttons_leaving) || state.new_user_message) {
-            $messages.animate(
-                {scrollTop: $messages.prop("scrollHeight")},
+            $container.animate(
+                {scrollTop: scroll_top},
                 {duration: state.scroll_delay, queue: false});
         }
         if (last_sound_played != bot_sound && $root.find('.bot.fadein-message').length) {

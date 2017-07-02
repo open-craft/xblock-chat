@@ -21,17 +21,25 @@ body.view-in-course .course-wrapper.chromeless {
     height: 100%;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
 }
 
 .course-wrapper.chromeless .chat-block {
     width: 100vw;
-    height: 100vh;
 }
 
 .chat-block .subject {
   width: 100%;
+}
+
+.chat-block .main-area {
+    /* Limit the height of the scrollable chat area to approximately
+       the window height minus standard LMS headers. */
+    max-height: calc(100vh - 350px);
+    overflow-y: auto;
+}
+.course-wrapper.chromeless .chat-block .main-area {
+    height: 100vh;
+    max-height: none;
 }
 
 .chat-block .subject p {
@@ -69,10 +77,8 @@ body.view-in-course .course-wrapper.chromeless {
 }
 
 .chat-block .messages {
-    padding: 30px 10px 60px 10px;
+    padding: 30px 10px;
     box-sizing: border-box;
-    overflow-y: auto;
-    flex-grow: 5000;
 }
 
 .chat-block .message {
@@ -158,7 +164,6 @@ body.view-in-course .course-wrapper.chromeless {
 .chat-block .buttons {
     box-sizing: border-box;
     display: block;
-    flex: 1 0 auto;
     max-height: 0%;
     overflow: hidden;
 }
