@@ -25,18 +25,18 @@ function ChatTemplates(init_data) {
       var tag = 'div.notice';
 
       if (step.notice_type) {
-        tag = tag.concat('.' + step.notice_type);
+          tag = tag.concat('.' + step.notice_type);
       }
 
       return h(tag, h('p', step.notice_text));
     };
 
     var subjectTemplate = function(ctx) {
-      if (ctx.subject) {
-        return h('div.subject', h('p', ctx.subject));
-      } else {
-        return null;
-      }
+        if (ctx.subject) {
+            return h('div.subject', h('p', ctx.subject));
+        } else {
+            return null;
+        }
     };
 
     // Position the image to make it cover the max possible area of the window while
@@ -126,13 +126,13 @@ function ChatTemplates(init_data) {
             tag = tag.concat('.' + extra_css_class);
         }
         var messageContent = botMessageContentTemplate(
-          message.from, tag, children
+            message.from, tag, children
         );
 
         if (step && step.notice_text) {
-          return [noticeTemplate(step), messageContent];
+            return [noticeTemplate(step), messageContent];
         } else {
-          return messageContent;
+            return messageContent;
         }
     };
 
@@ -195,6 +195,10 @@ function ChatTemplates(init_data) {
             'data-message': JSON.stringify(item.message),
             'data-step_id': JSON.stringify(item.step)
         };
+        var button_props = {};
+        if (ctx.show_buttons_leaving) {
+            button_props.disabled = true;
+        }
         return (
             h(
                 'div.response-button',
@@ -204,6 +208,7 @@ function ChatTemplates(init_data) {
                 [
                     h(
                         'button',
+                        button_props,
                         item.message
                     )
                 ]
@@ -211,17 +216,18 @@ function ChatTemplates(init_data) {
         );
     };
 
-    var buttonsTemplate = function(ctx, extra_css_class, transition_duration) {
+    var buttonsTemplate = function(ctx) {
         var tag = 'div.buttons';
-        if (extra_css_class) {
-            tag = tag.concat('.' + extra_css_class);
+        if (ctx.show_buttons_entering) {
+            tag += '.entering';
+        } else if (ctx.show_buttons_leaving) {
+            tag += '.leaving';
         }
         var attributes = {};
-        if (transition_duration) {
-            attributes = {
-                style: {
-                    transition: 'max-height '+ transition_duration + 'ms linear'
-                }
+        if (ctx.show_buttons_entering || ctx.show_buttons_leaving) {
+            var transition_duration = init_data["buttons_entering_transition_duration"];
+            attributes.style = {
+                transition: 'max-height '+ transition_duration + 'ms linear'
             };
         }
         var step = ctx.current_step && init_data["steps"][ctx.current_step];
@@ -257,21 +263,18 @@ function ChatTemplates(init_data) {
     };
 
     var mainTemplate = function(ctx) {
-        var children = [
-            subjectTemplate(ctx),
+        var main_area_content = [
             messagesTemplate(ctx)
         ];
         if (ctx.show_buttons) {
-            if (ctx.show_buttons_entering) {
-                children.push(buttonsTemplate(ctx, 'entering', init_data["buttons_entering_transition_duration"]));
-            } else if (ctx.show_buttons_leaving) {
-                children.push(buttonsTemplate(ctx, 'leaving', init_data["buttons_leaving_transition_duration"]));
-            } else {
-                children.push(buttonsTemplate(ctx));
-            }
-            children.push(actionsTemplate());
+            main_area_content.push(buttonsTemplate(ctx));
         }
-        children.push(spacerTemplate(ctx));
+        var children = [
+            subjectTemplate(ctx),
+            h('div.main-area', main_area_content),
+            actionsTemplate(),
+            spacerTemplate(ctx)
+        ];
         if (ctx.image_overlay) {
             children.push(imageOverlayTemplate(ctx));
         }
@@ -404,10 +407,10 @@ function ChatXBlock(runtime, element, init_data) {
         state.scroll_delay = 0;
         state.image_overlay = null;
         state.image_dimensions = {};
+        state.subject = init_data["subject"];
         preloadImages();
         applyState(state);
         state.scroll_delay = init_data["scroll_delay"];
-        state.subject = init_data["subject"];
         return state;
     };
 
@@ -690,12 +693,13 @@ function ChatXBlock(runtime, element, init_data) {
      * if there are response buttons and the bot sound wasn't the last played
      */
     var animate = function(state) {
-        var $messages = $root.find('.messages');
+        var $container = $root.find('.main-area');
+        var scroll_top = $container.prop('scrollHeight');
         if (!state.scroll_delay) {
-            $messages.scrollTop($messages.prop("scrollHeight"));
+            $container.scrollTop(scroll_top);
         } else if (state.bot_spinner || (state.show_buttons && !state.show_buttons_leaving) || state.new_user_message) {
-            $messages.animate(
-                {scrollTop: $messages.prop("scrollHeight")},
+            $container.animate(
+                {scrollTop: scroll_top},
                 {duration: state.scroll_delay, queue: false});
         }
         if (last_sound_played != bot_sound && $root.find('.bot.fadein-message').length) {

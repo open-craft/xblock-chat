@@ -21,58 +21,64 @@ body.view-in-course .course-wrapper.chromeless {
     height: 100%;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
 }
 
 .course-wrapper.chromeless .chat-block {
     width: 100vw;
-    height: 100vh;
 }
 
 .chat-block .subject {
-  width: 100%;
+    width: 100%;
+}
+
+.chat-block .main-area {
+    /* Limit the height of the scrollable chat area to approximately
+       the window height minus standard LMS headers. */
+    max-height: calc(100vh - 350px);
+    overflow-y: auto;
+}
+.course-wrapper.chromeless .chat-block .main-area {
+    height: 100vh;
+    max-height: none;
 }
 
 .chat-block .subject p {
-  background-color: #fff;
-  color: #000;
-  padding: 10px 15px 20px 15px;
+    background-color: #fff;
+    color: #000;
+    padding: 10px 15px 20px 15px;
 }
 
 .chat-block .notice {
-  position: relative;
-  width: 100%;
-  margin: 15px auto;
+    position: relative;
+    width: 100%;
+    margin: 15px auto;
 }
 
 .chat-block .notice::before {
-  font-size: 25px;
-  font-family: FontAwesome;
-  position: absolute;
-  top: 50%;
-  transform: translate(0, -50%);
-  left: 10px;
+    font-size: 25px;
+    font-family: FontAwesome;
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+    left: 10px;
 }
 
 .chat-block .notice.correct::before {
-  content: "\f058";
+    content: "\f058";
 }
 
 .chat-block .notice.incorrect::before {
-  content: "\f057";
+    content: "\f057";
 }
 
 .chat-block .notice p {
-  padding: 20px 15px 20px 40px;
-  background: #f0f0f0;
+    padding: 20px 15px 20px 40px;
+    background: #f0f0f0;
 }
 
 .chat-block .messages {
-    padding: 30px 10px 60px 10px;
+    padding: 30px 10px;
     box-sizing: border-box;
-    overflow-y: auto;
-    flex-grow: 5000;
 }
 
 .chat-block .message {
@@ -158,7 +164,6 @@ body.view-in-course .course-wrapper.chromeless {
 .chat-block .buttons {
     box-sizing: border-box;
     display: block;
-    flex: 1 0 auto;
     max-height: 0%;
     overflow: hidden;
 }

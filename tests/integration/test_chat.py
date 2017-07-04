@@ -381,6 +381,19 @@ class TestChat(StudioEditableBaseTest):
         ]
         self.assertEqual(button_labels, default_response_labels)
 
+    # Make button leave animation long enough for Selenium to be able to inspect the leaving buttons.
+    @patch('chat.chat.BUTTONS_LEAVING_TRANSITION_DURATION', 5000)
+    def test_button_disabled_after_click(self):
+        self.load_scenario('xml/chat_defaults.xml')
+        self.wait_until_buttons_are_displayed()
+        buttons = self.element.find_elements_by_css_selector('.buttons .response-button button')
+        self.assertEqual(len(buttons), 2)
+        for button in buttons:
+            self.assertFalse(button.get_attribute('disabled'))
+        buttons[0].click()
+        for button in buttons:
+            self.assertTrue(button.get_attribute('disabled'))
+
     def configure_block(
             self, yaml, expect_success=True, bot_image_url=None, avatar_border_color=None,
             enable_restart_button=None, subject=None
