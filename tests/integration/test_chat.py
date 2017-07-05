@@ -268,35 +268,27 @@ class TestChat(StudioEditableBaseTest):
         super(TestChat, self).setUp()
         def mocked_url(block):
             return '/static/images/profiles/default_120.png'
-        patcher = patch('chat.chat.ChatXBlock._user_image_url', mocked_url)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        self._patch('chat.chat.ChatXBlock._user_image_url', mocked_url)
         # Don't wait for bot message animations
-        patcher = patch('chat.chat.BOT_MESSAGE_ANIMATION_DELAY', 0)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        self._patch('chat.chat.BOT_MESSAGE_ANIMATION_DELAY', 0)
         # Don't wait for user message animations
-        patcher = patch('chat.chat.USER_MESSAGE_ANIMATION_DELAY', 0)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        self._patch('chat.chat.USER_MESSAGE_ANIMATION_DELAY', 0)
         # Don't wait for buttons and scroll animations
-        patcher = patch('chat.chat.BUTTONS_ENTERING_TRANSITION_DURATION', 0)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-        patcher = patch('chat.chat.BUTTONS_LEAVING_TRANSITION_DURATION', 0)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-        patcher = patch('chat.chat.SCROLL_DELAY', 0)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-        patcher = patch('workbench.runtime.WorkbenchRuntime.replace_urls',
-                        lambda _, html: re.sub(r'"/static/([^"]*)"', r'"/course/test-course/assets/\1"', html),
-                        create=True,
-        )
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        self._patch('chat.chat.BUTTONS_ENTERING_TRANSITION_DURATION', 0)
+        self._patch('chat.chat.BUTTONS_LEAVING_TRANSITION_DURATION', 0)
+        self._patch('chat.chat.SCROLL_DELAY', 0)
         # Don't wait for typing delay per character
-        patcher = patch('chat.chat.TYPING_DELAY_PER_CHARACTER', 0)
+        self._patch('chat.chat.TYPING_DELAY_PER_CHARACTER', 0)
+        # Patch the workbench runtime to more closely resemble the LMS runtime.
+        self._patch(
+            'workbench.runtime.WorkbenchRuntime.replace_urls',
+            lambda _, html: re.sub(r'"/static/([^"]*)"', r'"/course/test-course/assets/\1"', html),
+            create=True,
+        )
+
+    def _patch(self, target, value, **kwargs):
+        """Patches target with new value for duration of the test."""
+        patcher = patch(target, value, **kwargs)
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -833,9 +825,7 @@ class TestChat(StudioEditableBaseTest):
                 emails=["user@example.com"],
                 full_name="John Doe"
             )
-        patcher = patch('workbench.runtime.WorkBenchUserService.get_current_user', mocked_get_current_user)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        self._patch('workbench.runtime.WorkBenchUserService.get_current_user', mocked_get_current_user)
 
     def test_name_placeholder(self):
         self.mock_user_service()
@@ -858,7 +848,10 @@ class TestChat(StudioEditableBaseTest):
         bot_messages = self.element.find_elements_by_css_selector('.messages .message.bot')
         self.assertEqual(bot_messages[-1].text, "Yep, that's correct! Good job John.")
 
-    def test_state_saved_to_local_storage(self):
+    @patch('workbench.runtime.WorkbenchRuntime.anonymous_student_id', 'my-anon-student-id', create=True)
+    @patch('chat.chat.ChatXBlock._get_block_id')
+    def test_state_saved_to_local_storage(self, mock_get_block_id):
+        mock_get_block_id.return_value = 'my-block-id'
         self.configure_block(yaml_good)
         self.element = self.go_to_view("student_view")
         # localStorage should be empty initially.
@@ -868,7 +861,7 @@ class TestChat(StudioEditableBaseTest):
         # localStorage should now contain user state.
         self.assertEqual(self.browser.execute_script('return localStorage.length'), 1)
         key = self.browser.execute_script('return localStorage.key(0)')
-        self.assertTrue(key.startswith('chat-xblock-'))
+        self.assertEqual(key, 'chat-xblock/my-anon-student-id/my-block-id')
         state = self.browser.execute_script('return JSON.parse(localStorage.getItem("{}"))'.format(key))
         self.assertEqual(len(state['messages']), 2)
         self.assertEqual(state['current_step'], 'step2')

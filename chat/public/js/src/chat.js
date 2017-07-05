@@ -312,7 +312,9 @@ function ChatXBlock(runtime, element, init_data) {
      * is stored in localStorage.
      */
     var localStorageKey = function() {
-        return 'chat-xblock-' + init_data["block_id"];
+        var user_id = init_data["anonymous_student_id"];
+        var block_id = init_data["block_id"];
+        return 'chat-xblock/' +  user_id + '/' + block_id;
     };
 
     /**

@@ -230,6 +230,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             "response_sound_url": self.runtime.handler_url(
                 self, 'serve_audio', 'response.wav'),
             "user_id": USER_ID,
+            "anonymous_student_id": self._get_student_id(),
             "steps": steps,
             "first_step": first_step,
             "user_state": self._get_user_state(),
@@ -277,6 +278,13 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         current_user = User.objects.get(username=username)  # pylint: disable=no-member
         urls = get_profile_image_urls_for_user(current_user)
         return urls.get('large')
+
+    def _get_student_id(self):
+        """Get student anonymous ID or normal ID"""
+        if hasattr(self.runtime, 'anonymous_student_id'):
+            return self.runtime.anonymous_student_id
+        else:
+            return self.scope_ids.user_id
 
     def _get_block_id(self):
         """
