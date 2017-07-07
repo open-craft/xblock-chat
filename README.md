@@ -212,10 +212,11 @@ Inside a fresh virtualenv, `cd` into the root folder of this repository
 (`xblock-chat`) and run
 
 ```bash
+$ pip install -U pip wheel
+$ pip install setuptools==24.3.1
 $ pip install -r requirements-test.txt
 $ pip install -r $VIRTUAL_ENV/src/xblock-sdk/requirements/base.txt
 $ pip install -r $VIRTUAL_ENV/src/xblock-sdk/requirements/test.txt
-$ pip install -r $VIRTUAL_ENV/src/xblock/requirements.txt
 ```
 
 You can then run the entire test suite via
