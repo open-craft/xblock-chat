@@ -121,16 +121,18 @@ useful when, for example, you want to give feedback to an action.
 
 ```yaml
 - step1:
-    notice-type: correct
     notice-text: Ding, Ding! We have a winner!
+    notice-type: correct
     messages: Nice shot.
 ```
 
-`notice-type` is the CSS class associated with the notice. You can leverage
-this to style the notices any way you like.
+`notice-type` is optional. Two notice types are currently supported:
+`correct` and `incorrect`. Notices with `notice-type` set to `correct`
+will display a check mark icon next to the text. Notices set to
+`incorrect` type, will display a cross mark icon.
 
-Currently we have builtin styles for two notice types: `correct` and
-`incorrect`. This will add corresponding badges to the displayed notices.
+If you don't specify the `notice-type`, the notice will be neutral and
+will not show any icons.
 
 ### Bot Message Randomization
 
