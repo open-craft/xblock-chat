@@ -82,24 +82,25 @@ body.view-in-course .course-wrapper.chromeless {
 }
 
 .chat-block .message {
-    display: flex;
     margin-bottom: 15px;
-    align-items: flex-end;
 }
 
 .chat-block .user {
-    justify-content: flex-end;
+    text-align: right;
 }
 
 .chat-block .avatar {
     height: 45px;
     min-width: 45px;
+    display: inline-block;
+    vertical-align: bottom;
 }
 
 .chat-block .avatar img {
     box-sizing: border-box;
     display: block;
     height: 100%;
+    width: auto;
     border-width: 2px;
     border-style: solid;
     border-color: #39b549;
@@ -108,6 +109,8 @@ body.view-in-course .course-wrapper.chromeless {
 
 .chat-block .message-body {
     position: relative;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .chat-block .message-body p {
@@ -118,6 +121,7 @@ body.view-in-course .course-wrapper.chromeless {
     font-family: Arial;
     background: rgba(221, 221, 221, 0.7);
     padding: 16px;
+    margin: 0;
     color: #333;
 }
 
