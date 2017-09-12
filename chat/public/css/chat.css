@@ -25,10 +25,19 @@ body.view-in-course .course-wrapper.chromeless {
 
 .course-wrapper.chromeless .chat-block {
     width: 100vw;
+    display: block;
+    overflow: auto;
 }
 
-.chat-block .subject {
+.chat-wrapper .subject {
     width: 100%;
+}
+
+.course-wrapper.chromeless .subject {
+    width: 90%;
+    max-height: 70px;
+    padding-bottom: 5px;
+    overflow: scroll;
 }
 
 .chat-block .main-area {
@@ -38,8 +47,7 @@ body.view-in-course .course-wrapper.chromeless {
     overflow-y: auto;
 }
 .course-wrapper.chromeless .chat-block .main-area {
-    height: 100vh;
-    max-height: none;
+    max-height: 95vh;
 }
 
 .chat-block .subject p {
@@ -79,6 +87,10 @@ body.view-in-course .course-wrapper.chromeless {
 .chat-block .messages {
     padding: 30px 10px;
     box-sizing: border-box;
+}
+
+.course-wrapper.chromeless .chat-block .messages {
+    padding: 30px 40px 30px 0px;
 }
 
 .chat-block .message {

@@ -262,23 +262,35 @@ function ChatTemplates(init_data) {
         );
     };
 
-    var mainTemplate = function(ctx) {
+    var mainAreaTemplate = function(ctx) {
         var main_area_content = [
             messagesTemplate(ctx)
         ];
         if (ctx.show_buttons) {
             main_area_content.push(buttonsTemplate(ctx));
         }
+        // On mobile apps take in account the subject's height
+        // (above the main area) only if the chat has a subject
+        var attributes = {};
+        if ($('.course-wrapper.chromeless').length && ctx.subject) {
+            attributes.style = { 'max-height': 'calc(95vh - 80px)' };
+        }
+        return h('div.main-area', attributes, main_area_content);
+    };
+
+    var mainTemplate = function(ctx) {
         var children = [
-            subjectTemplate(ctx),
-            h('div.main-area', main_area_content),
+            mainAreaTemplate(ctx),
             actionsTemplate(),
             spacerTemplate(ctx)
         ];
         if (ctx.image_overlay) {
             children.push(imageOverlayTemplate(ctx));
         }
-        return h('div.chat-block', children);
+        return h(
+            'div.chat-wrapper',
+            [subjectTemplate(ctx), h('div.chat-block', children)]
+        );
     };
 
     return mainTemplate;
