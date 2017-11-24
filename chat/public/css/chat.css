@@ -103,26 +103,40 @@ body.view-in-course .course-wrapper.chromeless {
 
 .chat-block .avatar {
     height: 45px;
-    min-width: 45px;
+    width: 45px;
     display: inline-block;
+    position: relative;
     vertical-align: bottom;
 }
 
 .chat-block .avatar img {
     box-sizing: border-box;
     display: block;
-    height: 100%;
-    width: auto;
+    max-height: 100%;
+    max-width: 100%;
     border-width: 2px;
     border-style: solid;
     border-color: #39b549;
     border-radius: 50%;
+    position: absolute;
+    bottom: 0;
+}
+
+.chat-block .bot .avatar img {
+    left: 0;
+}
+
+.chat-block .user .avatar img {
+    right: 0;
 }
 
 .chat-block .message-body {
     position: relative;
     display: inline-block;
     vertical-align: middle;
+    /* Chat message can take the available width, reduced by the width of the avatar (45px)
+       and the margin between the avatar and the message (25px). */
+    max-width: calc(100% - 45px - 25px);
 }
 
 .chat-block .message-body p {
