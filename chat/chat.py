@@ -183,7 +183,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
     def _decode_steps_string(steps):
         """Loads the string containing the list of steps."""
         try:
-            steps = yaml.load(steps)
+            steps = yaml.safe_load(steps)
         except yaml.parser.ParserError:
             steps = None
         if isinstance(steps, list):
@@ -256,7 +256,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         If the value is a string, it assumes it represents the image url of the default bot."""
         mapping = {DEFAULT_BOT_ID: self._default_bot_image_url()}
 
-        image_urls = yaml.load(self.bot_image_url)
+        image_urls = yaml.safe_load(self.bot_image_url)
         if isinstance(image_urls, dict):
             for bot_id in image_urls:
                 key = self._custom_bot_id(bot_id)
