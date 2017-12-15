@@ -386,6 +386,36 @@ class TestChat(StudioEditableBaseTest):
         for button in buttons:
             self.assertTrue(button.get_attribute('disabled'))
 
+    @patch('chat.chat.BUTTONS_LEAVING_TRANSITION_DURATION', 50)
+    def test_button_disable_handler_after_click(self):
+        self.load_scenario('xml/chat_defaults.xml')
+        self.wait_until_buttons_are_displayed()
+        chat_block = self.element.find_element_by_class_name('chat-block')
+        buttons = self.element.find_elements_by_css_selector('.buttons .response-button')
+        # Patch `_is_final_step` instead of `submit_response` since `submit_response` needs to return a
+        # response or other errors might be raised. `_is_final_step` is a good proxy since it's
+        # called each time `submit_response` is called.
+        with patch('chat.chat.ChatXBlock._is_final_step') as mocked_method:
+            self.browser.execute_script("arguments[0].click();", buttons[0])
+            self.browser.execute_script("arguments[0].click();", buttons[1])
+            self.browser.execute_script("arguments[0].click();", buttons[0])
+            self.wait_until_buttons_are_displayed()
+            self.assertEquals(mocked_method.call_count, 1)
+
+    @patch('chat.chat.BUTTONS_LEAVING_TRANSITION_DURATION', 5000)
+    def test_button_selected_after_click(self):
+        self.load_scenario('xml/chat_defaults.xml')
+        self.wait_until_buttons_are_displayed()
+        button_wrappers = self.element.find_elements_by_css_selector('.buttons .response-button')
+        button_wrapper_clicked = button_wrappers[0]
+        button_wrapper_not_clicked = button_wrappers[1]
+        button = button_wrapper_clicked.find_element_by_tag_name('button')
+        self.assertNotIn('selected', button_wrapper_clicked.get_attribute('class'))
+        self.assertNotIn('selected', button_wrapper_not_clicked.get_attribute('class'))
+        button.click()
+        self.assertIn('selected', button_wrapper_clicked.get_attribute('class'))
+        self.assertNotIn('selected', button_wrapper_not_clicked.get_attribute('class'))
+
     def configure_block(
             self, yaml, expect_success=True, bot_image_url=None, avatar_border_color=None,
             enable_restart_button=None, subject=None

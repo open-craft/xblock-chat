@@ -196,12 +196,17 @@ function ChatTemplates(init_data) {
             'data-step_id': JSON.stringify(item.step)
         };
         var button_props = {};
+        var tag = 'div.response-button';
+        if (ctx.selected_button.step_id == item.step &&
+            ctx.selected_button.message == item.message) {
+            tag += '.selected';
+        }
         if (ctx.show_buttons_leaving) {
             button_props.disabled = true;
         }
         return (
             h(
-                'div.response-button',
+                tag,
                 {
                     attributes: attributes
                 },
@@ -422,6 +427,7 @@ function ChatXBlock(runtime, element, init_data) {
         state.image_overlay = null;
         state.image_dimensions = {};
         state.subject = init_data["subject"];
+        resetButtonSelection(state)();
         preloadImages();
         applyState(state);
         state.scroll_delay = init_data["scroll_delay"];
@@ -523,6 +529,33 @@ function ChatXBlock(runtime, element, init_data) {
     };
 
     /**
+     * selectButton: marks the clicked button as selected so it can be styled differently
+     */
+    var selectButton = function(step_id, message) {
+        return function() {
+            state.selected_button = {
+                step_id: step_id,
+                message: message
+            };
+            applyState(state);
+        };
+    };
+
+    /**
+     * resetButtonSelection: clear the button selection
+     */
+    var resetButtonSelection = function(state) {
+        return function() {
+            state.selected_button = {
+                step_id: null,
+                message: null
+            };
+            applyState(state);
+            return state;
+        }
+    }
+
+    /**
      * hideButtons: sets css class on the buttons container to trigger the css transition
      */
     var hideButtons = function() {
@@ -543,10 +576,8 @@ function ChatXBlock(runtime, element, init_data) {
      * createUserMessage: removes the buttons container and creates the new user message
      * triggering the fadein css animation
      */
-    var createUserMessage = function(event) {
+    var createUserMessage = function(message) {
         return function() {
-            var $response = $(event.target).closest('.response-button');
-            var message = JSON.parse($response.attr('data-message'));
             var step = state.current_step;
             state.new_user_message = createMessageFromSender(message, init_data["user_id"], step);
             state.show_buttons = false;
@@ -568,10 +599,8 @@ function ChatXBlock(runtime, element, init_data) {
     /**
      * addUserMessageToHistory: adds the new user message to the chat history
      */
-    var addUserMessageToHistory = function(event) {
+    var addUserMessageToHistory = function(step_id) {
         return function() {
-            var $response = $(event.target).closest('.response-button');
-            var step_id = JSON.parse($response.attr('data-step_id'));
             state.messages.push(state.new_user_message);
             state.new_user_message = null;
             state.current_step = step_id;
@@ -660,15 +689,24 @@ function ChatXBlock(runtime, element, init_data) {
      * setting pauses and fade animations in between
      */
     var submitResponse = function(event) {
+        // show_buttons_leaving is set once a response button has been clicked, the response
+        // buttons should no longer be interactable at this state, so ignore any additional
+        // clicks.
+        if (state.show_buttons_leaving) { return; }
         var promise;
+        var $response = $(event.target).closest('.response-button');
+        var step_id = JSON.parse($response.attr('data-step_id'));
+        var message = JSON.parse($response.attr('data-message'));
         playSound(response_sound);
         playSoundInMutedLoop(bot_sound);
         promise = $.Deferred();
-        promise.then(hideButtons)
+        promise.then(selectButton(step_id, message))
+          .then(hideButtons)
           .then(waitForButtonsHiding)
-          .then(createUserMessage(event))
+          .then(resetButtonSelection(state))
+          .then(createUserMessage(message))
           .then(waitUserMessageAnimation)
-          .then(addUserMessageToHistory(event))
+          .then(addUserMessageToHistory(step_id))
           .then(waitUserMessageAnimation)
           .then(saveState)
           .then(addNewBotMessages(state));
@@ -889,6 +927,7 @@ function ChatXBlock(runtime, element, init_data) {
             show_buttons: state.show_buttons,
             show_buttons_entering: state.show_buttons_entering,
             show_buttons_leaving: state.show_buttons_leaving,
+            selected_button: state.selected_button,
             image_overlay: state.image_overlay,
             image_dimensions: state.image_dimensions,
             subject: state.subject,

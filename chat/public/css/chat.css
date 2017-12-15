@@ -223,6 +223,10 @@ body.view-in-course .course-wrapper.chromeless {
     width: 80%;
 }
 
+.chat-block .response-button button:disabled {
+    opacity: 1;
+}
+
 .chat-block .response-button button,
 .chat-block .response-button button:hover,
 .chat-block .response-button button:active,
@@ -236,6 +240,10 @@ body.view-in-course .course-wrapper.chromeless {
     text-shadow: none;
     outline: 0;
     border-radius: 10px;
+}
+
+.chat-block .response-button.selected button {
+    opacity: 0.5;
 }
 
 .chat-block .actions {
