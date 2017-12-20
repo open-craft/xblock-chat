@@ -77,7 +77,7 @@ function ChatTemplates(init_data) {
         var img_style = {};
         if (img_dims) {
             var win_width = $(window).width();
-            var win_height = $(window).height() - ctx.spacer_height;
+            var win_height = $(window).height();
             img_style = optimalOverlayImageStyle(img_dims.width, img_dims.height, win_width, win_height);
         }
         return (
@@ -261,12 +261,6 @@ function ChatTemplates(init_data) {
         return h('div.actions', children);
     };
 
-    var spacerTemplate = function(ctx) {
-        return (
-            h('div.spacer', {style: {height: ctx.spacer_height + 'px'}})
-        );
-    };
-
     var mainAreaTemplate = function(ctx) {
         var main_area_content = [
             messagesTemplate(ctx)
@@ -286,8 +280,7 @@ function ChatTemplates(init_data) {
     var mainTemplate = function(ctx) {
         var children = [
             mainAreaTemplate(ctx),
-            actionsTemplate(),
-            spacerTemplate(ctx)
+            actionsTemplate()
         ];
         if (ctx.image_overlay) {
             children.push(imageOverlayTemplate(ctx));
@@ -303,10 +296,6 @@ function ChatTemplates(init_data) {
 
 function ChatXBlock(runtime, element, init_data) {
     "use strict";
-
-    // A spacer div at the bottom of the screen is required on the iOS app to account for the prev/next toolbar.
-    // It's set to a value other than 0 in the init function if we detect we are on mobile.
-    var spacer_height = 0;
 
     var renderView = ChatTemplates(init_data);
 
@@ -394,16 +383,6 @@ function ChatXBlock(runtime, element, init_data) {
      * user data passed from the backend
      */
     var init = function() {
-        // prevent rubber band effect (overscroll) in iOS app
-        if ($('.course-wrapper.chromeless').length) {
-            // On iOS, some padding is required at the bottom of the screen.
-            spacer_height = 44;
-
-            $('html, body').css({
-                position: 'fixed',
-                overflow: 'hidden'
-            });
-        }
         $element.on('click', '.response-button', submitResponse);
         $element.on('click', '.restart-button', restartChat);
         $element.on('click', '.message-body img', showImageOverlay);
@@ -930,8 +909,7 @@ function ChatXBlock(runtime, element, init_data) {
             selected_button: state.selected_button,
             image_overlay: state.image_overlay,
             image_dimensions: state.image_dimensions,
-            subject: state.subject,
-            spacer_height: spacer_height
+            subject: state.subject
         };
         return renderView(context);
     };

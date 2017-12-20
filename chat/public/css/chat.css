@@ -25,6 +25,7 @@ body.view-in-course .course-wrapper.chromeless {
 
 .course-wrapper.chromeless .chat-block {
     width: 100vw;
+    height: 100vh;
     display: block;
     overflow: auto;
 }
@@ -47,7 +48,7 @@ body.view-in-course .course-wrapper.chromeless {
     overflow-y: auto;
 }
 .course-wrapper.chromeless .chat-block .main-area {
-    max-height: 95vh;
+    max-height: calc(100vh - 50px);  /* keep 50px for the actions div */
 }
 
 .chat-block .subject p {
