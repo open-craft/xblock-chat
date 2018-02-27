@@ -102,6 +102,10 @@ body.view-in-course .course-wrapper.chromeless {
     text-align: right;
 }
 
+.chat-block .message-body p {
+    text-align: left;
+}
+
 .chat-block .avatar {
     height: 45px;
     width: 45px;
