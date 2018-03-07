@@ -379,3 +379,45 @@ body.view-in-course .course-wrapper.chromeless {
         opacity: 1;
     }
 }
+
+/*RTL CSS*/
+
+
+.rtl .chat-block .bot .message-body::after{
+    border-width: 5px 0 5px 12px;
+    right: -12px;
+    left: auto;
+}
+
+.rtl .chat-block .user .message-body::after{
+    border-width: 5px 12px 5px 0;
+    right: auto;
+    left: -12px;
+}
+
+.rtl .chat-block .bot{
+    text-align: right;
+}
+
+.rtl .chat-block .user{
+    text-align: left;
+}
+
+.rtl .chat-block .bot .message-body{
+    margin-left: 0;
+    margin-right: 25px;
+}
+
+.rtl .chat-block .user .message-body{
+    margin-left: 25px;
+    margin-right: 0;
+}
+
+.rtl .chat-block .notice p{
+    padding: 20px 40px 20px 15px;
+}
+
+.rtl .chat-block .notice::before{
+    right: 10px;
+    left: auto;
+}
