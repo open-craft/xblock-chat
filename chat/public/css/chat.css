@@ -423,9 +423,13 @@ body.view-in-course .course-wrapper.chromeless {
 
 .rtl .chat-block .notice p{
     padding: 20px 40px 20px 15px;
+    text-align: right;
 }
 
 .rtl .chat-block .notice::before{
     right: 10px;
     left: auto;
+}
+.rtl .chat-block .message-body p {
+    text-align: right;
 }
