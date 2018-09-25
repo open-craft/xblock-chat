@@ -399,17 +399,11 @@ body.view-in-course .course-wrapper.chromeless {
     text-align: right;
 }
 
-.rtl .chat-block .bot .avatar {
-    float: right;
-}
 
 .rtl .chat-block .user{
     text-align: left;
 }
 
-.rtl .chat-block .user .avatar {
-    float: left;
-}
 
 .rtl .chat-block .bot .message-body{
     margin-left: 0;
