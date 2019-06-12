@@ -627,6 +627,7 @@ class TestChat(StudioEditableBaseTest):
 
     def test_yaml_validation(self):
         # Test a step not being a dictionary
+        self.maxDiff = None
         self.configure_block(yaml_invalid_step, expect_success=False)
         self.expect_error_message(
             u"Step step1\n... must be a valid YAML mapping "
@@ -636,42 +637,71 @@ class TestChat(StudioEditableBaseTest):
         # Test a step with missing messages attribute
         self.configure_block(yaml_missing_messages, expect_success=False)
         self.expect_error_message(
-            u"Step step3:\n  responses:\n  - {Yes please: step1}\n  "
-            u"- {No thanks: null} is missing the following attributes: "
+            u"Step step3:\n  responses:\n  - Yes please: step1\n  "
+            u"- No thanks: null is missing the following attributes: "
             u"messages"
         )
         # Test a step with its responses list not containing dictionaries
         self.configure_block(yaml_invalid_responses, expect_success=False)
         self.expect_error_message(
-            u"The 'responses' attribute of step1:\n  messages:\n  - ['What is 1+1?', "
-            u"'What is the sum of 1 and 1?']\n  responses: [response a, response b] has to "
-            u"be a list of response mappings of maximum length 7."
+            u"The 'responses' attribute of step1:\n"
+            u"  messages:\n"
+            u"  - - What is 1+1?\n"
+            u"    - What is the sum of 1 and 1?\n"
+            u"  responses:\n"
+            u"  - response a\n"
+            u"  - response b has to be a list of response mappings of maximum length 7."
         )
         # Test a step with too many respones (controlled by MAX_USER_RESPONSES variable)
         with patch('chat.chat.MAX_USER_RESPONSES', 2):
             self.configure_block(yaml_too_many_responses, expect_success=False)
             self.expect_error_message(
-                u"The 'responses' attribute of step1:\n  messages:\n  - ['What is 1+1?', "
-                u"'What is the sum of 1 and 1?']\n  responses:\n  - {2: step2}\n  - {3: step3}\n  "
-                u"- {4: step3} has to be a list of response mappings of maximum length 2."
+                u"The 'responses' attribute of step1:\n"
+                u"  messages:\n"
+                u"  - - What is 1+1?\n"
+                u"    - What is the sum of 1 and 1?\n"
+                u"  responses:\n"
+                u"  - 2: step2\n"
+                u"  - 3: step3\n"
+                u"  - 4: step3 has to be a list of response mappings of maximum length 2."
         )
 
     def test_image_url_validation(self):
+        self.maxDiff = None
         self.configure_block(invalid_image_url, expect_success=False)
         self.expect_error_message(
-            u"The 'image-url' attribute of step1:\n  image-url: This is not a valid URL\n  "
-            u"messages:\n  - ['What is 1+1?', 'What is the sum of 1 and 1?', '1 + 1 is:', "
-            u"'1 plus 1 equals\n      what?', 'one + one?']\n  responses:\n  - {2: step2}\n  - "
-            u"{3: step3} has to be a valid URL string."
+            u"The 'image-url' attribute of step1:\n"
+            u"  image-url: This is not a valid URL\n"
+            u"  messages:\n"
+            u"  - - What is 1+1?\n"
+            u"    - What is the sum of 1 and 1?\n"
+            u"    - '1 + 1 is:'\n"
+            u"    - 1 plus 1 equals what?\n"
+            u"    - one + one?\n"
+            u"  responses:\n"
+            u"  - 2: step2\n"
+            u"  - 3: step3 has to be a valid URL string."
         )
 
     def test_image_alt_validation(self):
+        self.maxDiff = None
         self.configure_block(invalid_image_alt, expect_success=False)
         self.expect_error_message(
-            u"The 'image-alt' attribute of step1:\n  image-alt: [1, 2, 3]\n  image-url: "
-            u"http://example.com/image.png\n  messages:\n  - ['What is 1+1?', 'What is the sum of 1 and 1?', "
-            u"'1 + 1 is:', '1 plus 1 equals\n      what?', 'one + one?']\n  responses:\n  - "
-            u"{2: step2}\n  - {3: step3} has to be a string."
+            u"The 'image-alt' attribute of step1:\n"
+            u"  image-alt:\n"
+            u"  - 1\n"
+            u"  - 2\n"
+            u"  - 3\n"
+            u"  image-url: http://example.com/image.png\n"
+            u"  messages:\n"
+            u"  - - What is 1+1?\n"
+            u"    - What is the sum of 1 and 1?\n"
+            u"    - '1 + 1 is:'\n"
+            u"    - 1 plus 1 equals what?\n"
+            u"    - one + one?\n"
+            u"  responses:\n"
+            u"  - 2: step2\n"
+            u"  - 3: step3 has to be a string."
         )
 
     def test_image_rendering(self):
