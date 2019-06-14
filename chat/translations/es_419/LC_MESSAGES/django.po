@@ -1,0 +1,102 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-06-12 17:01-0500\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: es_419\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: chat.py:54
+msgid "Title (display name)"
+msgstr "Título (nombre a mostrar)"
+
+#: chat.py:55
+msgid "Title to display"
+msgstr "Título a mostrar"
+
+#: chat.py:56
+msgid "Chat XBlock"
+msgstr "Chat XBlock"
+
+#: chat.py:61
+msgid "Chat subject"
+msgstr "Chat sujeto"
+
+#: chat.py:62
+msgid "Subject being discussed in the chat"
+msgstr "Sujeto de discusión en el chat"
+
+#: chat.py:68
+msgid "Steps"
+msgstr "Pasos"
+
+#: chat.py:70
+msgid ""
+"Sequence of steps (in YAML). Each step is a mapping where the key represents "
+"the step id and whose value is a nested mapping with the following keys: "
+"'messages' (sequence of strings), 'image-url' (optional string), 'image-"
+"alt' (optional string), 'responses' (optional sequence of response "
+"mappings). In the response mappings the key represents the message displayed "
+"to the user as a response button and the value is the id of the next step."
+msgstr ""
+"Secuencia de pasos (en YAML). Cada paso es un mapeo donde la llave representa "
+"el id del paso y el valor es un mapeo anidado con las siguientes llaves: "
+"'messages' (secuencia de strings), 'image-url' (opcional), 'image-alt' "
+"(opcional), 'responses' (opcional secuencia de mapeo de respuestas). "
+"En el mapeo de respuestas la llave representa el mensaje a mostrar "
+"al usuario como botón y el valor es el id del siguiente paso"
+
+#: chat.py:83
+msgid "Bot profile image URL"
+msgstr "URL de imagen de perfil para el Bot"
+
+#: chat.py:85
+msgid ""
+"For example, http://example.com/bot.png or /static/bot.png. In Studio, you "
+"can upload images from the Content - Files & Uploads page.If using multiple "
+"bot personas, can be a YAML mapping of bot_id: image_url pairs."
+msgstr ""
+"Por ejemplo, http://example.com/bot.png o /static/bot.png. En Studio, "
+"puedes subit imagenes en el menú Content - Files & Uploads. Si se usan múltiples "
+"bot personas, se puede usar un mapeo en formato YAML con pares de bot_id: image_url"
+
+#: chat.py:95
+msgid "Avatar border color"
+msgstr "Color de borde del Avatar"
+
+#: chat.py:97
+msgid ""
+"Standard colors are #fdfe02 (yellow), #0000fe (blue), #ff551e (dark orange), "
+"#00ffff (cyan), #cccccc (grey), #fe0090 (fuchsia), #adff00 (lime), #fd9705 "
+"(light orange), #bf00fe (magenta), #39b54a (green)"
+msgstr ""
+"Colores estándar son #fdfe02 (amarillo), #0000fe (azul), #ff551e (naranja oscuro), "
+"#00ffff (cian), #cccccc (gris), #fe0090 (fuchsia), #adff00 (lima), #fd9705 "
+"(naranja claro), #bf00fe (magenta), #39b54a (verde)"
+
+#: chat.py:105
+msgid "Enable restart button"
+msgstr "Habilitar botón de reinicio"
+
+#: chat.py:112
+msgid ""
+"List of dictionaries representing the messages exchanged between the bot and "
+"the user. Each dictionary has the form: {'from': ..., 'message': '...', "
+"'step': id}. The possible values for 'from' are default_data.USER_ID, "
+"default_data.DEFAULT_BOT_ID, or a custom bot ID."
+msgstr ""
+"Lista de diccionarios representando los mensajes intercambiados entre el bot "
+"y el usuario. Cada diccionario tiene como formato: {'from': ..., 'message': '...', "
+"'step': id}. Los valores posibles para 'form' son default_data.USER_ID, "
+"default_data.DEFAULT_BOT_ID, o un bot ID personalizado."

@@ -240,3 +240,50 @@ MEDIA_ROOT = '/edx/var/edxapp/media'
 to `edx-platform/lms/envs/private.py`
 
 2. In order to make the chat interface responsive it's necessary to apply [this fix](https://github.com/open-craft/edx-platform/commit/2a1cf699452ae567bcb3caeb507760f29f1df830) to the LMS chromeless courseware template.
+
+Translation (i18n)
+-------------------------------
+
+This repo offers multiple make targets to automate the translation tasks.
+First, install `requirements-dev.txt`:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+Each make target will be explained below:
+
+- `extract_translations`. Use [`i18n_tool` extract](https://github.com/edx/i18n-tools) to create `.po` files based on all the tagged strings in the python and javascript code.
+- `compile_translations`. Use [`i18n_tool` generate](https://github.com/edx/i18n-tools) to create `.mo` compiled files.
+- `detect_changed_source_translations`. Use [`i18n_tool` changed](https://github.com/edx/i18n-tools) to identify any updated translations.
+- `validate_translations`. Compile translations and check the source translations haven't changed.
+
+If you want to add a new language:
+  1. Add language to `chat/translations/config.yaml`
+  2. Make sure all tagged strings have been extracted:
+  ```bash
+  make extract_translations
+  ```
+  3. Clone `en` directory to `chat/translations/<lang_code>/` for example: `problem_builder/translations/fa_IR/`
+  4. Make necessary changes to translation files headers. Make sure you have proper `Language` and `Plural-Forms` lines.
+  5. When you finished your modification process, re-compile the translation messages.
+  ```bash
+  make compile_translations
+  ```
+
+Transifex
+---------
+
+This repo offers different make targets to automate interaction with transifex. To use these make targets first install `requirements-dev.txt`.
+```bash
+pip install -r requirements-dev.txt
+```
+
+These are the different make targets used to interact with transifex:
+
+- `pull_translations`. Pull translations from Transifex.
+- `push_translations`. Push translations to Transifex.
+
+The transifex configuration is stored in `.tx`. For more information read [transifex's documentation](https://docs.transifex.com/client/client-configuration)
+
+

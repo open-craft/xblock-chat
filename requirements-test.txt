@@ -3,3 +3,8 @@ Django>=1.8, <1.9
 -e git+https://github.com/edx/xblock-sdk.git@c40b5dc3e9a2ded54119e922edf486d3ccec6c35#egg=xblock-sdk
 ddt
 selenium==2.47.3  # 2.48 is not working atm
+django-statici18n==1.8.2
+transifex-client==0.12.1
+edx-i18n-tools==0.4.7
+django-babel-underscore==0.5.2
+Mako==1.0.12
