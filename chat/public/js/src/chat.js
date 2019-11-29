@@ -105,7 +105,7 @@ function ChatTemplates(init_data) {
 
     var botMessageContentTemplate = function(bot_id, tag, children) {
         return (
-            h(tag, [
+            h(tag, {attributes: {tabindex: '-1'}}, [
                 avatarTemplate(init_data['bot_image_urls'][bot_id]),
                 h('div.message-body', [
                     h('p', children)
@@ -154,7 +154,7 @@ function ChatTemplates(init_data) {
             tag = tag.concat('.' + extra_css_class);
         }
         return (
-            h(tag, [
+            h(tag, {attributes: {tabindex: '-1'}}, [
                 h('div.message-body', [
                     h('p', message.message)
                 ]),
@@ -409,6 +409,7 @@ function ChatXBlock(runtime, element, init_data) {
         resetButtonSelection(state)();
         preloadImages();
         applyState(state);
+        $(root).find('.message.bot').focus();
         state.scroll_delay = init_data["scroll_delay"];
         return state;
     };
@@ -562,6 +563,7 @@ function ChatXBlock(runtime, element, init_data) {
             state.show_buttons = false;
             state.show_buttons_leaving = false;
             applyState(state);
+            $(root).find('.message.user').focus();
         };
     };
 
