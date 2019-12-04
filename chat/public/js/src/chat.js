@@ -184,7 +184,7 @@ function ChatTemplates(init_data) {
         }
         return (
             h(
-                'div.messages',
+                'div.messages', {attributes: {'aria-live': 'polite'}},
                 messages
             )
         );
