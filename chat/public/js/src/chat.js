@@ -253,9 +253,9 @@ function ChatTemplates(init_data) {
         }
     };
 
-    var actionsTemplate = function() {
+    var actionsTemplate = function(ctx) {
         var children = [];
-        if (init_data['enable_restart_button']) {
+        if (init_data['enable_restart_button'] && ctx.show_buttons_entering) {
             children.push(h('button.restart-button', 'Restart'));
         }
         return h('div.actions', children);
@@ -280,7 +280,7 @@ function ChatTemplates(init_data) {
     var mainTemplate = function(ctx) {
         var children = [
             mainAreaTemplate(ctx),
-            actionsTemplate()
+            actionsTemplate(ctx)
         ];
         if (ctx.image_overlay) {
             children.push(imageOverlayTemplate(ctx));
