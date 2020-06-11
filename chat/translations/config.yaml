@@ -3,6 +3,7 @@
 locales:
     - en  # English - Source Language
     - es_419  # Spanish
+    - ko_KR  # Korean (Korea)
 
 # The locales used for fake-accented English, for testing.
 dummy_locales:

@@ -22,7 +22,7 @@ def package_data(pkg, roots):
 
 setup(
     name='chat-xblock',
-    version='0.2.6',
+    version='0.2.7',
     description='chat XBlock',   # TODO: write a better description.
     packages=[
         'chat',

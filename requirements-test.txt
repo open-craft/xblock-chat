@@ -1,4 +1,6 @@
 Django>=1.8, <1.9
+xblock==1.2.9
+web-fragments==0.3.1
 -r requirements.txt
 -e git+https://github.com/edx/xblock-sdk.git@c40b5dc3e9a2ded54119e922edf486d3ccec6c35#egg=xblock-sdk
 ddt
