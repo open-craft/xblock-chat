@@ -16,7 +16,7 @@
   /* gettext library */
 
   django.catalog = {
-    "Restart": "REINICIAR"
+    "Restart": "\u91cd\u65b0\u542f\u52a8"
   };
 
   django.gettext = function (msgid) {
@@ -68,39 +68,39 @@
   /* formatting library */
 
   django.formats = {
-    "DATETIME_FORMAT": "j \\d\\e F \\d\\e Y \\a \\l\\a\\s H:i", 
+    "DATETIME_FORMAT": "Y\u5e74n\u6708j\u65e5 H:i", 
     "DATETIME_INPUT_FORMATS": [
-      "%d/%m/%Y %H:%M:%S", 
-      "%d/%m/%Y %H:%M:%S.%f", 
-      "%d/%m/%Y %H:%M", 
-      "%d/%m/%y %H:%M:%S", 
-      "%d/%m/%y %H:%M:%S.%f", 
-      "%d/%m/%y %H:%M", 
-      "%Y-%m-%d %H:%M:%S", 
-      "%Y-%m-%d %H:%M:%S.%f", 
+      "%Y/%m/%d %H:%M", 
       "%Y-%m-%d %H:%M", 
+      "%Y\u5e74%n\u6708%j\u65e5 %H:%M", 
+      "%Y/%m/%d %H:%M:%S", 
+      "%Y-%m-%d %H:%M:%S", 
+      "%Y\u5e74%n\u6708%j\u65e5 %H:%M:%S", 
+      "%Y/%m/%d %H:%M:%S.%f", 
+      "%Y-%m-%d %H:%M:%S.%f", 
+      "%Y\u5e74%n\u6708%j\u65e5 %H:%n:%S.%f", 
       "%Y-%m-%d"
     ], 
-    "DATE_FORMAT": "j \\d\\e F \\d\\e Y", 
+    "DATE_FORMAT": "Y\u5e74n\u6708j\u65e5", 
     "DATE_INPUT_FORMATS": [
-      "%d/%m/%Y", 
-      "%d/%m/%y", 
-      "%Y-%m-%d"
+      "%Y/%m/%d", 
+      "%Y-%m-%d", 
+      "%Y\u5e74%n\u6708%j\u65e5"
     ], 
-    "DECIMAL_SEPARATOR": ",", 
+    "DECIMAL_SEPARATOR": ".", 
     "FIRST_DAY_OF_WEEK": "1", 
-    "MONTH_DAY_FORMAT": "j \\d\\e F", 
-    "NUMBER_GROUPING": "3", 
-    "SHORT_DATETIME_FORMAT": "d/m/Y H:i", 
-    "SHORT_DATE_FORMAT": "d/m/Y", 
-    "THOUSAND_SEPARATOR": ".", 
+    "MONTH_DAY_FORMAT": "m\u6708j\u65e5", 
+    "NUMBER_GROUPING": "4", 
+    "SHORT_DATETIME_FORMAT": "Y\u5e74n\u6708j\u65e5 H:i", 
+    "SHORT_DATE_FORMAT": "Y\u5e74n\u6708j\u65e5", 
+    "THOUSAND_SEPARATOR": "", 
     "TIME_FORMAT": "H:i", 
     "TIME_INPUT_FORMATS": [
+      "%H:%M", 
       "%H:%M:%S", 
-      "%H:%M:%S.%f", 
-      "%H:%M"
+      "%H:%M:%S.%f"
     ], 
-    "YEAR_MONTH_FORMAT": "F \\d\\e Y"
+    "YEAR_MONTH_FORMAT": "Y\u5e74n\u6708"
   };
 
   django.get_format = function (format_type) {

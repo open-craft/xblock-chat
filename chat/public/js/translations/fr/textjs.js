@@ -16,7 +16,7 @@
   /* gettext library */
 
   django.catalog = {
-    "Restart": "REINICIAR"
+    "Restart": "RED\u00c9MARRER"
   };
 
   django.gettext = function (msgid) {
@@ -68,39 +68,43 @@
   /* formatting library */
 
   django.formats = {
-    "DATETIME_FORMAT": "j \\d\\e F \\d\\e Y \\a \\l\\a\\s H:i", 
+    "DATETIME_FORMAT": "j F Y H:i", 
     "DATETIME_INPUT_FORMATS": [
       "%d/%m/%Y %H:%M:%S", 
       "%d/%m/%Y %H:%M:%S.%f", 
       "%d/%m/%Y %H:%M", 
-      "%d/%m/%y %H:%M:%S", 
-      "%d/%m/%y %H:%M:%S.%f", 
-      "%d/%m/%y %H:%M", 
+      "%d/%m/%Y", 
+      "%d.%m.%Y %H:%M:%S", 
+      "%d.%m.%Y %H:%M:%S.%f", 
+      "%d.%m.%Y %H:%M", 
+      "%d.%m.%Y", 
       "%Y-%m-%d %H:%M:%S", 
       "%Y-%m-%d %H:%M:%S.%f", 
       "%Y-%m-%d %H:%M", 
       "%Y-%m-%d"
     ], 
-    "DATE_FORMAT": "j \\d\\e F \\d\\e Y", 
+    "DATE_FORMAT": "j F Y", 
     "DATE_INPUT_FORMATS": [
       "%d/%m/%Y", 
       "%d/%m/%y", 
+      "%d.%m.%Y", 
+      "%d.%m.%y", 
       "%Y-%m-%d"
     ], 
     "DECIMAL_SEPARATOR": ",", 
     "FIRST_DAY_OF_WEEK": "1", 
-    "MONTH_DAY_FORMAT": "j \\d\\e F", 
+    "MONTH_DAY_FORMAT": "j F", 
     "NUMBER_GROUPING": "3", 
-    "SHORT_DATETIME_FORMAT": "d/m/Y H:i", 
-    "SHORT_DATE_FORMAT": "d/m/Y", 
-    "THOUSAND_SEPARATOR": ".", 
+    "SHORT_DATETIME_FORMAT": "j N Y H:i", 
+    "SHORT_DATE_FORMAT": "j N Y", 
+    "THOUSAND_SEPARATOR": "\u00a0", 
     "TIME_FORMAT": "H:i", 
     "TIME_INPUT_FORMATS": [
       "%H:%M:%S", 
       "%H:%M:%S.%f", 
       "%H:%M"
     ], 
-    "YEAR_MONTH_FORMAT": "F \\d\\e Y"
+    "YEAR_MONTH_FORMAT": "F Y"
   };
 
   django.get_format = function (format_type) {

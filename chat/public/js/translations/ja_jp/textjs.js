@@ -16,7 +16,7 @@
   /* gettext library */
 
   django.catalog = {
-    "Restart": "REINICIAR"
+    "Restart": "\u518d\u8d77\u52d5"
   };
 
   django.gettext = function (msgid) {
@@ -68,39 +68,49 @@
   /* formatting library */
 
   django.formats = {
-    "DATETIME_FORMAT": "j \\d\\e F \\d\\e Y \\a \\l\\a\\s H:i", 
+    "DATETIME_FORMAT": "Y\u5e74n\u6708j\u65e5G:i", 
     "DATETIME_INPUT_FORMATS": [
-      "%d/%m/%Y %H:%M:%S", 
-      "%d/%m/%Y %H:%M:%S.%f", 
-      "%d/%m/%Y %H:%M", 
-      "%d/%m/%y %H:%M:%S", 
-      "%d/%m/%y %H:%M:%S.%f", 
-      "%d/%m/%y %H:%M", 
       "%Y-%m-%d %H:%M:%S", 
       "%Y-%m-%d %H:%M:%S.%f", 
       "%Y-%m-%d %H:%M", 
-      "%Y-%m-%d"
+      "%Y-%m-%d", 
+      "%m/%d/%Y %H:%M:%S", 
+      "%m/%d/%Y %H:%M:%S.%f", 
+      "%m/%d/%Y %H:%M", 
+      "%m/%d/%Y", 
+      "%m/%d/%y %H:%M:%S", 
+      "%m/%d/%y %H:%M:%S.%f", 
+      "%m/%d/%y %H:%M", 
+      "%m/%d/%y"
     ], 
-    "DATE_FORMAT": "j \\d\\e F \\d\\e Y", 
+    "DATE_FORMAT": "Y\u5e74n\u6708j\u65e5", 
     "DATE_INPUT_FORMATS": [
-      "%d/%m/%Y", 
-      "%d/%m/%y", 
-      "%Y-%m-%d"
+      "%Y-%m-%d", 
+      "%m/%d/%Y", 
+      "%m/%d/%y", 
+      "%b %d %Y", 
+      "%b %d, %Y", 
+      "%d %b %Y", 
+      "%d %b, %Y", 
+      "%B %d %Y", 
+      "%B %d, %Y", 
+      "%d %B %Y", 
+      "%d %B, %Y"
     ], 
-    "DECIMAL_SEPARATOR": ",", 
-    "FIRST_DAY_OF_WEEK": "1", 
-    "MONTH_DAY_FORMAT": "j \\d\\e F", 
-    "NUMBER_GROUPING": "3", 
-    "SHORT_DATETIME_FORMAT": "d/m/Y H:i", 
-    "SHORT_DATE_FORMAT": "d/m/Y", 
-    "THOUSAND_SEPARATOR": ".", 
-    "TIME_FORMAT": "H:i", 
+    "DECIMAL_SEPARATOR": ".", 
+    "FIRST_DAY_OF_WEEK": "0", 
+    "MONTH_DAY_FORMAT": "n\u6708j\u65e5", 
+    "NUMBER_GROUPING": "0", 
+    "SHORT_DATETIME_FORMAT": "Y/m/d G:i", 
+    "SHORT_DATE_FORMAT": "Y/m/d", 
+    "THOUSAND_SEPARATOR": ",", 
+    "TIME_FORMAT": "G:i", 
     "TIME_INPUT_FORMATS": [
       "%H:%M:%S", 
       "%H:%M:%S.%f", 
       "%H:%M"
     ], 
-    "YEAR_MONTH_FORMAT": "F \\d\\e Y"
+    "YEAR_MONTH_FORMAT": "Y\u5e74n\u6708"
   };
 
   django.get_format = function (format_type) {

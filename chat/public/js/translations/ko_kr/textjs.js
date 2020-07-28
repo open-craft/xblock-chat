@@ -13,13 +13,47 @@
   
 
   
-  /* gettext identity library */
+  /* gettext library */
 
-  django.gettext = function (msgid) { return msgid; };
-  django.ngettext = function (singular, plural, count) { return (count == 1) ? singular : plural; };
+  django.catalog = {
+    "Restart": "\ub2e4\uc2dc \uc2dc\uc791"
+  };
+
+  django.gettext = function (msgid) {
+    var value = django.catalog[msgid];
+    if (typeof(value) == 'undefined') {
+      return msgid;
+    } else {
+      return (typeof(value) == 'string') ? value : value[0];
+    }
+  };
+
+  django.ngettext = function (singular, plural, count) {
+    var value = django.catalog[singular];
+    if (typeof(value) == 'undefined') {
+      return (count == 1) ? singular : plural;
+    } else {
+      return value[django.pluralidx(count)];
+    }
+  };
+
   django.gettext_noop = function (msgid) { return msgid; };
-  django.pgettext = function (context, msgid) { return msgid; };
-  django.npgettext = function (context, singular, plural, count) { return (count == 1) ? singular : plural; };
+
+  django.pgettext = function (context, msgid) {
+    var value = django.gettext(context + '\x04' + msgid);
+    if (value.indexOf('\x04') != -1) {
+      value = msgid;
+    }
+    return value;
+  };
+
+  django.npgettext = function (context, singular, plural, count) {
+    var value = django.ngettext(context + '\x04' + singular, context + '\x04' + plural, count);
+    if (value.indexOf('\x04') != -1) {
+      value = django.ngettext(singular, plural, count);
+    }
+    return value;
+  };
   
 
   django.interpolate = function (fmt, obj, named) {
@@ -34,45 +68,45 @@
   /* formatting library */
 
   django.formats = {
-    "DATETIME_FORMAT": "Y\ub144 n\uc6d4 j\uc77c g:i A",
+    "DATETIME_FORMAT": "Y\ub144 n\uc6d4 j\uc77c g:i A", 
     "DATETIME_INPUT_FORMATS": [
-      "%Y-%m-%d %H:%M:%S",
-      "%Y-%m-%d %H:%M:%S.%f",
-      "%Y-%m-%d %H:%M",
-      "%Y-%m-%d",
-      "%m/%d/%Y %H:%M:%S",
-      "%m/%d/%Y %H:%M:%S.%f",
-      "%m/%d/%Y %H:%M",
-      "%m/%d/%Y",
-      "%m/%d/%y %H:%M:%S",
-      "%m/%d/%y %H:%M:%S.%f",
-      "%m/%d/%y %H:%M",
-      "%m/%d/%y",
-      "%Y\ub144 %m\uc6d4 %d\uc77c %H\uc2dc %M\ubd84 %S\ucd08",
+      "%Y-%m-%d %H:%M:%S", 
+      "%Y-%m-%d %H:%M:%S.%f", 
+      "%Y-%m-%d %H:%M", 
+      "%Y-%m-%d", 
+      "%m/%d/%Y %H:%M:%S", 
+      "%m/%d/%Y %H:%M:%S.%f", 
+      "%m/%d/%Y %H:%M", 
+      "%m/%d/%Y", 
+      "%m/%d/%y %H:%M:%S", 
+      "%m/%d/%y %H:%M:%S.%f", 
+      "%m/%d/%y %H:%M", 
+      "%m/%d/%y", 
+      "%Y\ub144 %m\uc6d4 %d\uc77c %H\uc2dc %M\ubd84 %S\ucd08", 
       "%Y\ub144 %m\uc6d4 %d\uc77c %H\uc2dc %M\ubd84"
-    ],
-    "DATE_FORMAT": "Y\ub144 n\uc6d4 j\uc77c",
+    ], 
+    "DATE_FORMAT": "Y\ub144 n\uc6d4 j\uc77c", 
     "DATE_INPUT_FORMATS": [
-      "%Y-%m-%d",
-      "%m/%d/%Y",
-      "%m/%d/%y",
+      "%Y-%m-%d", 
+      "%m/%d/%Y", 
+      "%m/%d/%y", 
       "%Y\ub144 %m\uc6d4 %d\uc77c"
-    ],
-    "DECIMAL_SEPARATOR": ".",
-    "FIRST_DAY_OF_WEEK": "0",
-    "MONTH_DAY_FORMAT": "F\uc6d4 j\uc77c",
-    "NUMBER_GROUPING": "3",
-    "SHORT_DATETIME_FORMAT": "Y-n-j H:i",
-    "SHORT_DATE_FORMAT": "Y-n-j.",
-    "THOUSAND_SEPARATOR": ",",
-    "TIME_FORMAT": "A g:i",
+    ], 
+    "DECIMAL_SEPARATOR": ".", 
+    "FIRST_DAY_OF_WEEK": "0", 
+    "MONTH_DAY_FORMAT": "F\uc6d4 j\uc77c", 
+    "NUMBER_GROUPING": "3", 
+    "SHORT_DATETIME_FORMAT": "Y-n-j H:i", 
+    "SHORT_DATE_FORMAT": "Y-n-j.", 
+    "THOUSAND_SEPARATOR": ",", 
+    "TIME_FORMAT": "A g:i", 
     "TIME_INPUT_FORMATS": [
-      "%H:%M:%S",
-      "%H:%M:%S.%f",
-      "%H:%M",
-      "%H\uc2dc %M\ubd84 %S\ucd08",
+      "%H:%M:%S", 
+      "%H:%M:%S.%f", 
+      "%H:%M", 
+      "%H\uc2dc %M\ubd84 %S\ucd08", 
       "%H\uc2dc %M\ubd84"
-    ],
+    ], 
     "YEAR_MONTH_FORMAT": "Y\ub144 F\uc6d4"
   };
 

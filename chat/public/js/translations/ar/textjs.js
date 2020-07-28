@@ -16,7 +16,7 @@
   /* gettext library */
 
   django.catalog = {
-    "Restart": "REINICIAR"
+    "Restart": "\u0625\u0639\u0627\u062f\u0629 \u0627\u0644\u062a\u0634\u063a\u064a\u0644"
   };
 
   django.gettext = function (msgid) {
@@ -68,39 +68,49 @@
   /* formatting library */
 
   django.formats = {
-    "DATETIME_FORMAT": "j \\d\\e F \\d\\e Y \\a \\l\\a\\s H:i", 
+    "DATETIME_FORMAT": "N j, Y, P", 
     "DATETIME_INPUT_FORMATS": [
-      "%d/%m/%Y %H:%M:%S", 
-      "%d/%m/%Y %H:%M:%S.%f", 
-      "%d/%m/%Y %H:%M", 
-      "%d/%m/%y %H:%M:%S", 
-      "%d/%m/%y %H:%M:%S.%f", 
-      "%d/%m/%y %H:%M", 
       "%Y-%m-%d %H:%M:%S", 
       "%Y-%m-%d %H:%M:%S.%f", 
       "%Y-%m-%d %H:%M", 
-      "%Y-%m-%d"
+      "%Y-%m-%d", 
+      "%m/%d/%Y %H:%M:%S", 
+      "%m/%d/%Y %H:%M:%S.%f", 
+      "%m/%d/%Y %H:%M", 
+      "%m/%d/%Y", 
+      "%m/%d/%y %H:%M:%S", 
+      "%m/%d/%y %H:%M:%S.%f", 
+      "%m/%d/%y %H:%M", 
+      "%m/%d/%y"
     ], 
-    "DATE_FORMAT": "j \\d\\e F \\d\\e Y", 
+    "DATE_FORMAT": "j F\u060c Y", 
     "DATE_INPUT_FORMATS": [
-      "%d/%m/%Y", 
-      "%d/%m/%y", 
-      "%Y-%m-%d"
+      "%Y-%m-%d", 
+      "%m/%d/%Y", 
+      "%m/%d/%y", 
+      "%b %d %Y", 
+      "%b %d, %Y", 
+      "%d %b %Y", 
+      "%d %b, %Y", 
+      "%B %d %Y", 
+      "%B %d, %Y", 
+      "%d %B %Y", 
+      "%d %B, %Y"
     ], 
     "DECIMAL_SEPARATOR": ",", 
-    "FIRST_DAY_OF_WEEK": "1", 
-    "MONTH_DAY_FORMAT": "j \\d\\e F", 
-    "NUMBER_GROUPING": "3", 
-    "SHORT_DATETIME_FORMAT": "d/m/Y H:i", 
-    "SHORT_DATE_FORMAT": "d/m/Y", 
+    "FIRST_DAY_OF_WEEK": "0", 
+    "MONTH_DAY_FORMAT": "j F", 
+    "NUMBER_GROUPING": "0", 
+    "SHORT_DATETIME_FORMAT": "m/d/Y P", 
+    "SHORT_DATE_FORMAT": "d\u200f/m\u200f/Y", 
     "THOUSAND_SEPARATOR": ".", 
-    "TIME_FORMAT": "H:i", 
+    "TIME_FORMAT": "g:i A", 
     "TIME_INPUT_FORMATS": [
       "%H:%M:%S", 
       "%H:%M:%S.%f", 
       "%H:%M"
     ], 
-    "YEAR_MONTH_FORMAT": "F \\d\\e Y"
+    "YEAR_MONTH_FORMAT": "F Y"
   };
 
   django.get_format = function (format_type) {

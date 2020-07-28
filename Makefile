@@ -5,7 +5,7 @@ JS_TARGET := $(WORKING_DIR)/public/js/translations
 EXTRACT_DIR := $(WORKING_DIR)/translations/en/LC_MESSAGES
 EXTRACTED_DJANGO := $(EXTRACT_DIR)/django-partial.po
 EXTRACTED_DJANGOJS := $(EXTRACT_DIR)/djangojs-partial.po
-EXTRACTED_TEXT := $(EXTRACT_DIR)/django.po
+EXTRACTED_TEXT := $(EXTRACT_DIR)/text.po
 
 help: ## display this help message
 	@echo "Please use \`make <target>' where <target> is one of"
