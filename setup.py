@@ -1,6 +1,7 @@
 """Setup for chat XBlock."""
 
 import os
+
 from setuptools import setup
 
 
@@ -22,7 +23,7 @@ def package_data(pkg, roots):
 
 setup(
     name='chat-xblock',
-    version='0.2.9',
+    version='0.3.0',
     description='chat XBlock',   # TODO: write a better description.
     packages=[
         'chat',

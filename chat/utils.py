@@ -1,4 +1,5 @@
 """Chat XBlock - Utils"""
+from builtins import object
 
 
 def _(text):
@@ -17,7 +18,7 @@ def ngettext_fallback(text_singular, text_plural, number):
         return text_plural
 
 
-class DummyTranslationService:
+class DummyTranslationService(object):
     """
     Dummy drop-in replacement for i18n XBlock service
     """
@@ -26,7 +27,7 @@ class DummyTranslationService:
     ngettext = ngettext_fallback
 
 
-class I18NService:
+class I18NService(object):
     """
     Add i18n_service attribute to XBlocks
     """

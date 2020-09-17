@@ -1,12 +1,19 @@
-Django>=1.8, <1.9
-xblock==1.2.9
-web-fragments==0.3.1
+Django>=1.11.29, <3.0
+xblock~=1.2.9
+web-fragments<0.4
 -r requirements.txt
--e git+https://github.com/edx/xblock-sdk.git@c40b5dc3e9a2ded54119e922edf486d3ccec6c35#egg=xblock-sdk
+-e 'git+https://github.com/edx/xblock-sdk.git@0.2.2#egg=xblock-sdk ; python_version >= "3"'
+-e 'git+https://github.com/edx/xblock-sdk.git@v0.1.6#egg=xblock-sdk ; python_version < "3"'
 ddt
-selenium==2.47.3  # 2.48 is not working atm
-django-statici18n==1.8.2
-transifex-client==0.12.1
-edx-i18n-tools==0.4.7
-django-babel-underscore==0.5.2
-Mako==1.0.12
+selenium~=3.1
+django-statici18n~=1.8.2
+transifex-client~=0.12.1
+edx-i18n-tools~=0.4.7
+git+https://github.com/edx/django-babel-underscore.git@37705f7377a4d0a4e673f1431895ce28a8860cd#egg=django-babel-underscore==0.6.0  ; python_version >= "3"
+django-babel-underscore~=0.5.2 ; python_version < "3"
+Mako<=2
+pycodestyle
+pylint
+isort
+mysqlclient==1.4.6
+pytest

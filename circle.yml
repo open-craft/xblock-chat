@@ -1,9 +1,9 @@
-version: 2
+version: 2.1
 jobs:
-  build:
+  quality:
+    parallelism: 3
     docker:
-      - image: circleci/python:2.7.14-browsers
-    parallelism: 2
+      - image: circleci/python:3.5
     steps:
       - checkout
       - restore_cache:
@@ -14,9 +14,6 @@ jobs:
             virtualenv venv
             . venv/bin/activate
             pip install -U pip wheel
-            # Temporarily pin setuptools to a specific version.
-            # See commit message of https://github.com/open-craft/problem-builder/commit/51277a34fb426724616618c1afdb893ab2de4c6b for more info:
-            pip install setuptools==24.3.1
             pip install -r requirements-test.txt
             pip install -r venv/src/xblock-sdk/requirements/base.txt
             pip install -r venv/src/xblock-sdk/requirements/test.txt
@@ -27,20 +24,87 @@ jobs:
           paths:
             - "venv"
       - run:
-          name: Install firefox 38.0.5
+          name: Code Quality Checks
           command: |
-            FIREFOX_URL="https://ftp.mozilla.org/pub/firefox/releases/38.0.5/linux-x86_64/en-US/firefox-38.0.5.tar.bz2"
-            curl --location --fail --retry 3 --output /tmp/firefox.tar.bz2 $FIREFOX_URL
-            sudo mkdir -p /opt/firefox-38
-            sudo tar -xvjC /opt/firefox-38 -f /tmp/firefox.tar.bz2
-            sudo rm /usr/bin/firefox
-            sudo ln -s /opt/firefox-38/firefox/firefox /usr/bin/firefox
-            sudo apt-get install -y libgtk3.0-cil-dev libasound2 libasound2 libdbus-glib-1-2 libdbus-1-3 libgtk2.0-0
+            . venv/bin/activate
+            if [ $CIRCLE_NODE_INDEX = '0' ]; then pycodestyle chat --max-line-length=120; fi
+            if [ $CIRCLE_NODE_INDEX = '1' ]; then isort --diff --check-only --recursive chat tests; fi
+            if [ $CIRCLE_NODE_INDEX = '2' ]; then pylint chat --disable=all --enable=function-redefined,undefined-variable,unused-import,unused-variable; fi
+  test:
+    docker:
+      - image: <<parameters.docker_image>>
+      - image: circleci/mysql:5.6
+        command: mysqld --character-set-server=latin1 --collation-server=latin1_swedish_ci
+        environment:
+          MYSQL_ROOT_PASSWORD: rootpw
+    parameters:
+      docker_image:
+        type: string
+    environment:
+      MOZ_HEADLESS: 1
+      WORKBENCH_DATABASES: '{"default": {"ENGINE": "django.db.backends.mysql", "NAME": "db", "USER": "root", "PASSWORD": "rootpw", "HOST": "127.0.0.1", "OPTIONS": {"charset": "utf8mb4"}}}'
+    steps:
+      - checkout
+      - run:
+          name: Update system
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y libgtk3.0-cil-dev libasound2 libasound2 libdbus-glib-1-2 libdbus-1-3 libgtk2.0-0 default-libmysqlclient-dev
+      - run:
+          name: Install geckodriver
+          command: |
+            wget https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz
+            tar xzf geckodriver-v0.26.0-linux64.tar.gz
+            sudo mv geckodriver /usr/local/bin/geckodriver
+            which geckodriver
+      - run:
+          name: Install new firefox
+          command: |
+            wget https://archive.mozilla.org/pub/firefox/releases/78.2.0esr/linux-x86_64/en-US/firefox-78.2.0esr.tar.bz2
+            tar jxf firefox-78.2.0esr.tar.bz2
+            export PATH="$(pwd)/firefox/:$PATH"
+            which firefox
             firefox --version
+      - restore_cache:
+          key: dependencies-{{ checksum "circle.yml" }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-test.txt" }}
+      - run:
+          name: Install Python deps in a venv
+          command: |
+            virtualenv venv
+            . venv/bin/activate
+            pip install -U pip wheel
+            pip install -r requirements-test.txt
+            pip install -r venv/src/xblock-sdk/requirements/base.txt
+            pip install -r venv/src/xblock-sdk/requirements/test.txt
+            pip install -e .
+            mkdir var
+      - save_cache:
+          key: dependencies-{{ checksum "circle.yml" }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-test.txt" }}
+          paths:
+            - "venv"
       - run:
           name: Run tests
           command: |
             . venv/bin/activate
-            if [ $CIRCLE_NODE_INDEX = '0' ]; then pep8 chat --max-line-length=120; fi
-            if [ $CIRCLE_NODE_INDEX = '1' ]; then pylint chat --disable=all --enable=function-redefined,undefined-variable,unused-import,unused-variable; fi
-            xvfb-run -e /dev/stdout --auto-servernum --server-args="-screen 0 1280x1024x24" python run_tests.py
+            mkdir test-results
+            pytest --junitxml=test-results/junit.xml
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: test-results
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - quality:
+          name: "Code Quality Checks"
+      - test:
+          name: "Ironwood: Python 2.7, Django 1.11"
+          docker_image: circleci/python:2.7-browsers
+      - test:
+          name: "Juniper: Python 3.5, Django 2.2"
+          docker_image: circleci/python:3.5-browsers
+      - test:
+          name: "Koa: Python 3.8, Django 2.2"
+          docker_image: circleci/python:3.8-browsers

@@ -1,14 +1,12 @@
 import os
-import pkg_resources
-import yaml
 import re
 
-from ddt import ddt, data
-from mock import ANY, patch
-
-from django.test.client import Client
-
+import pkg_resources
+import yaml
 from bok_choy.promise import EmptyPromise
+from ddt import data, ddt
+from django.test.client import Client
+from mock import ANY, patch
 from xblock.reference.user_service import XBlockUser
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable_test import StudioEditableBaseTest
@@ -205,7 +203,7 @@ real_image_url = """
 - step1:
     messages:
         - ["What is 1+1?", "What is the sum of 1 and 1?"]
-    image-url: http://localhost:8081/resource/chat/public/bot.jpg
+    image-url: {live_server_url}/resource/chat/public/bot.jpg
     responses:
         - 2: step2
         - 3: step3
@@ -317,7 +315,7 @@ class TestChat(StudioEditableBaseTest):
         self.assertEqual(notification[1]["message"], expected_message)
 
     def load_scenario(self, path, params=None):
-        scenario = loader.render_template(path, params)
+        scenario = loader.render_django_template(path, params)
         self.set_scenario_xml(scenario)
         self.element = self.go_to_view("student_view")
 
@@ -762,7 +760,7 @@ class TestChat(StudioEditableBaseTest):
         self.assertEqual(img.get_attribute('alt'), 'This is another image in localhost')
 
     def test_image_overlay(self):
-        self.configure_block(real_image_url)
+        self.configure_block(real_image_url.format(live_server_url=self.live_server_url))
         self.element = self.go_to_view('student_view')
         self.wait_until_buttons_are_displayed()
         image_overlays = self.element.find_elements_by_css_selector('.image-overlay')
@@ -824,7 +822,10 @@ class TestChat(StudioEditableBaseTest):
         self.element = self.go_to_view("student_view")
         bot_message = self.element.find_element_by_css_selector('.messages .message.bot')
         image = bot_message.find_element_by_tag_name('img')
-        self.assertEqual(image.get_attribute('src'), 'http://localhost:8081/course/test-course/assets/bot.png')
+        self.assertEqual(
+            image.get_attribute('src'),
+            '{}/course/test-course/assets/bot.png'.format(self.live_server_url),
+        )
 
     def test_bot_image_absolute_url(self):
         self.configure_block(yaml_good, bot_image_url='http://example.com/bot.png')
@@ -838,7 +839,7 @@ class TestChat(StudioEditableBaseTest):
         bot-1: /static/bot1.jpg
         bot-2: http://example.com/bot2.jpg
         """
-        expected_bot1_image_url = 'http://localhost:8081/course/test-course/assets/bot1.jpg'
+        expected_bot1_image_url = '{}/course/test-course/assets/bot1.jpg'.format(self.live_server_url)
         expected_bot2_image_url = 'http://example.com/bot2.jpg'
         self.configure_block(yaml_multiple_bots, bot_image_url=bot_image_url_mapping)
         self.element = self.go_to_view("student_view")

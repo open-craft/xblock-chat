@@ -9,27 +9,37 @@ each response includes the ID of the next step to respond with.
 
 import json
 import os
+from builtins import str
+
 import pkg_resources
-import yaml
-
 import webob
-
+import yaml
+from django import utils
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.http import Http404
-from django import utils
-
-from xblock.core import XBlock
-from xblock.fields import List, Scope, String, Boolean
+from past.builtins import basestring
 from web_fragments.fragment import Fragment
+from xblock.core import XBlock
+from xblock.fields import Boolean, List, Scope, String
 from xblock.validation import ValidationMessage
 from xblockutils.resources import ResourceLoader
 from xblockutils.studio_editable import StudioEditableXBlockMixin
 
-from .default_data import DEFAULT_BOT_ID, BOT_MESSAGE_ANIMATION_DELAY, DEFAULT_DATA, USER_ID, MAX_USER_RESPONSES
-from .default_data import BUTTONS_ENTERING_TRANSITION_DURATION, BUTTONS_LEAVING_TRANSITION_DURATION, SCROLL_DELAY
-from .default_data import NAME_PLACEHOLDER, TYPING_DELAY_PER_CHARACTER, USER_MESSAGE_ANIMATION_DELAY
+from .default_data import (
+    BOT_MESSAGE_ANIMATION_DELAY,
+    BUTTONS_ENTERING_TRANSITION_DURATION,
+    BUTTONS_LEAVING_TRANSITION_DURATION,
+    DEFAULT_BOT_ID,
+    DEFAULT_DATA,
+    MAX_USER_RESPONSES,
+    NAME_PLACEHOLDER,
+    SCROLL_DELAY,
+    TYPING_DELAY_PER_CHARACTER,
+    USER_ID,
+    USER_MESSAGE_ANIMATION_DELAY,
+)
 from .utils import _
 
 try:
@@ -162,7 +172,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         context["steps"] = self.steps
         fragment = Fragment()
         fragment.add_content(
-            loader.render_template("templates/chat.html", context)
+            loader.render_django_template("templates/chat.html", context)
         )
 
         fragment.add_css_url(
@@ -320,7 +330,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         if hasattr(self, 'location'):
             return self.location.html_id()  # pylint: disable=no-member
         else:
-            return unicode(self.scope_ids.usage_id)
+            return str(self.scope_ids.usage_id)
 
     @XBlock.handler
     def get_user_state(self, request, suffix=""):
@@ -415,7 +425,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         """Checks if the YAML step is a dictionary and has a single key"""
         return (
             isinstance(step, dict) and
-            len(step.keys()) == 1
+            len(list(step.keys())) == 1
         )
 
     def _validate_step(self, step, add_error):
@@ -445,7 +455,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
                 )
             )
             return
-        content = step.values()[0]
+        content = list(step.values())[0]
         required_attributes = ["messages"]
         missing_attributes = self._missing_attributes(content, required_attributes)
         if missing_attributes:
@@ -524,7 +534,7 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         """Checks if the response dictionary has a single key."""
         return (
             isinstance(response, dict) and
-            len(response.keys()) == 1
+            len(list(response.keys())) == 1
         )
 
     def _normalize_step(self, step):
@@ -549,10 +559,10 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
             ],
         }
         """
-        content = step.values()[0]
+        content = list(step.values())[0]
         messages = self._normalize_step_messages(content["messages"])
         return {
-            "id": unicode(step.keys()[0]),
+            "id": str(list(step.keys())[0]),
             "messages": messages,
             "image_url": content.get("image-url"),
             "image_alt": content.get("image-alt"),
@@ -566,8 +576,8 @@ class ChatXBlock(StudioEditableXBlockMixin, XBlock):
         """Normalizes a response dictionary."""
         return [
             {
-                "message": unicode(response.keys()[0]),
-                "step": unicode(response.values()[0]),
+                "message": str(list(response.keys())[0]),
+                "step": str(list(response.values())[0]),
             }
             for response in responses
         ]

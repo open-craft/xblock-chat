@@ -48,6 +48,7 @@ coverage.xml
 /tests.*.png
 /*test*.png
 var/*
+test-results/*
 
 # Sphinx documentation
 docs/_build/

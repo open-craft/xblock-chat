@@ -43,3 +43,6 @@ pull_translations: ## pull translations from transifex
 
 push_translations: ## push translations to transifex
 	cd $(WORKING_DIR) && i18n_tool transifex push
+
+isort: ## run isort on python source files
+	isort -rc chat tests
